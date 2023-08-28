@@ -27,11 +27,9 @@
 + Implement numerical derivative calculator so that
 Gamma point is supported. [**High priority**]
 
-+ Fix bug for Wannier Hamiltonian construction [**Very high-priority**]
++ Check Wannier Hamiltonian construction [**Very high-priority**]
 
-+ When absorption is false it still goes inside perturbation [**very low-priority**]
-
-+ When SOC is true and full then guess the number of orbitals [** before release**]
++ When SOC is true and full then guess the number of orbitals.
 
 + Unfolding simple and possibly, siesta [**low-priority**]
 
