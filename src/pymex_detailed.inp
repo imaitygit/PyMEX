@@ -1,0 +1,134 @@
+# Single-particle calculatoion method
+# Options: "DFT" or "TB"
+# Only "DFT" supported for now
+BSE:
+DFT
+
+# Read from $n$ files and combine
+# Option: "full" or "isolated"
+# full: implies a DFT calculations on the whole system
+# isolated: implies VB and CB are separated (type II or type I)
+# Only "full" supported for now
+Layer:
+full
+
+# Single-particle eigenvalues
+# Description: DFT_engine Filename Min Max Skip Bandtype
+# Options:
+#   DFT_engine: "SIESTA" or "QE"
+#   Filename: Anything that you wish
+#   Min: Minimum index of bands to use from the file
+#   Max: Maximum index of bands to use from the file
+#   Skip: You may want to skip these bands 
+#   Bandtype: Can be "VB" or "CB" 
+DFT:
+SIESTA WS2.bands 6 7 2 VB 
+SIESTA WS2.bands 7 8 2 CB
+
+# Single-particle wave-function coefficients 
+# i.e., C_nm_k matrices.
+# Description: Engine Filename Min Max Skip Bandtype
+# Options:
+#   Engine: "WAN90". Use WANNIER90 package
+#   Filename: Anything that you wish
+#   Min: Minimum index of bands to use from the file
+#   Max: Maximum index of bands to use from the file
+#   Skip: You may want to skip these bands
+#          NOTE: This skip has nothing to do with eigenvalues
+#                skip, as you may have already skipped them 
+#                during wannierization
+#   Bandtype: Can be "VB" or "CB"
+Coefficients:
+WAN90 WS2_u.mat 6 7 0 VB
+WAN90 WS2_u.mat 7 8 0 CB
+
+# Hamiltonian
+# Description: Engine Filename1 Filename2 Bandtype
+# Options:
+#   Engine: "WAN90". Use WANNIER90 package
+#   Filename1: Anything that you wish (*_hr.dat)
+#   Filename2: For Wigner-Seitz minimum (consistent with WAN90)
+#   Bandtype: Can be "VB" or "CB"
+Hamiltonian:
+WAN90 WS2_hr.dat WSe2_wsvec.dat VB
+WAN90 WS2_hr.dat WSe2_wsvec.dat CB
+
+# Structure file
+# Description: Engine Filename
+# Options:
+#   Engine: "WAN90". Use WANNIER90 input file
+#   Filename: Anything that you wish
+Structure:
+WAN90 WS2.win
+
+# El-Hole interaction potential
+# Description:Potential_name  layer                 type        Direct Exchange epsilon1 rho_0_1 a1_0 epsilon2 rho_02 a2_0
+# Options:    Keldysh         Intralayer/Interlayer simple/full True   True     epsilon1 rho_0_1 a1_0 epsilon2 rho_02 a2_0
+# Safety-checks are performed.
+Interaction:
+Keldysh monolayer simple True True 1.0 37.87 3.18
+
+# Location of Wannier/TB functions
+# decsription: Engine File-for-locations
+Location:
+WAN90 WS2.wout VB
+WAN90 WS2.wout CB
+
+# MP-grid (treated as real-space grid)
+# Description: n1 n2 n3
+# Options:
+#   n1,n2: Odd-integeres; Because of the way the Hamiltonian
+#          is now constructed; Can be and should be 
+#          improved later to support even-grid if necessary.
+# Safety-checks are performed. Otherwise, the mp-grid
+# is read from WANNIER90 input.
+Kgrid:
+9 9 1 
+
+# Absorption spectra
+# Spin-Orbit-correction options: 
+# Descriptions:
+# Toadd          Nature              Unfold       M2U(Moiré2unit map)  Delta_SOC 
+# True/False    Perturbation/Full    True/False   Filename1            Filename2
+# Full: Standard calculation; The single-particle calculations
+#       are expected to be run including SOC.
+# Perturbation: Add 1st-order perturbation for the SOC when BSE
+#               is constructed without SOC. Single-particle
+#               calculations are run without SOC. USE if you know
+#               what you are doing
+# Unfold: "True" or "False"
+#         Only set to True if working on moiré systems that has 
+#         several unit-cells;
+# M2U: If Unfold is "True" then Filename1 contains map of the cvk to the 
+#      unit-cell c_uv_uk_u; Essential to properly add SOC
+# Delta_SOC : Filename2 contains the SOC for the unit-cell.
+#              The SOC corrections to cvk will be added after mapping
+#              to c_uv_uk_u and then reading of the data from Filename2;
+# Full: standard calculation
+# perturbation: add 1st-order perturbation for the soc when BSE
+# is constructed without spin-orbit coupling;
+# Unfold: Only set to True if working on moiré systems.[x]
+# M2U: Filename1 contains map the cvk to the unit-cell c_uv_uk_u[x]
+# Delta_SOC : Filename2 contains the SOC for the unit-cell
+# WS2_unit_sp.bands: Spin-polarized bands calculations on a fine grid unit-cell
+# WS2_unit.bands: SOC bands calculations on a fine grid for a unit-cell
+#                 Use a sampling of 91x91x1 for arbitrary moiré;
+Absorption:
+False Perturbation False Moire2unit.hdf5 DELTA.hdf5 WS2_unit_unpolar.bands WS2_unit.bands 
+
+# Photon energies
+# Minimum	Maximum 	Separation	Gaussian_width
+# (BSE_min-Minimum) (BSE_min+Maximum)  window	\sigma
+# See below (all in eV)
+Ephoton:
+-0.03 0.47 0.005 0.005
+
+# Parallelization
+# MPI options for BSE construction:
+# Option1: bands/kpoints/full
+# Default: full;
+# Option2: thread/nothread
+# No-default
+# Other options are for cross-checking against old-versions
+parallel:
+full thread 
