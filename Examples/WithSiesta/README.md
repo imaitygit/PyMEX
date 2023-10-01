@@ -47,8 +47,7 @@ we are using 9x9x1 k-grid for the SCF calculations.
 
 4. Wannier90 one-shot projections;
 
-*cp WSe2.eigW WSe2.eig*
-
+*cp WSe2.eigW WSe2.eig*  
 *PATH-2-WAN90/wannier90.x WSe2*
 
 5. Wannier90 data to necessary files; Before you run `wannier90.x`
@@ -67,15 +66,15 @@ write_hr = .true
 6. Copy the necessary files to [BSE](./BSE) folder and create the 
 BSE Hamiltonian and diagonalize; 
 
-*cd ../BSE*
-*ln -s ../WANNIERIZE/WSe2_u.mat ./*
-*ln -s ../WANNIERIZE/WSe2_hr.dat ./*
-*ln -s ../WANNIERIZE/WSe2_wsvec.dat ./*
-*ln -s ../WANNIERIZE/WSe2.win ./*
-*ln -s ../WANNIERIZE/WSe2.wout ./*
-*ln -s ../WANNIERIZE/WSe2.bands ./*
-*`python3 PATH-2-PYMEX-SRC/setup.py build_ext --inplace
-export PATH=${PYMEXSRC}/build:$PATH`*
+*cd ../BSE*  
+*ln -s ../WANNIERIZE/WSe2_u.mat ./*  
+*ln -s ../WANNIERIZE/WSe2_hr.dat ./*  
+*ln -s ../WANNIERIZE/WSe2_wsvec.dat ./*  
+*ln -s ../WANNIERIZE/WSe2.win ./*  
+*ln -s ../WANNIERIZE/WSe2.wout ./*  
+*ln -s ../WANNIERIZE/WSe2.bands ./*  
+*python3 PATH-2-PYMEX-SRC/setup.py build_ext --inplace*  
+*export PATH=${PYMEXSRC}/build:$PATH*  
 *mpirun -np numprocess python3 calc_Ham.py >& bse_out*
 
 The lines above creates soft links for required files, 
