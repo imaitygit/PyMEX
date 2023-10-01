@@ -10,7 +10,7 @@ NOTE: The spin-orbit coupling is included perturbatively.
 1. Run Wannier90 to create the k-grid within the [WANNIERIZE](./WANNIERIZE) 
 folder;
  
-*cd WANNIERIZE* 
+*cd WANNIERIZE*  
 *PATH-2-WAN90/utility/kmesh.pl 9 9 1 wannier >> kpoints_wannier*
 
 You will find 81 kpoints written in `kpoints_wannier` file. We
