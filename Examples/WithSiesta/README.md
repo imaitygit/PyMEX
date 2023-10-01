@@ -1,7 +1,7 @@
-**Author: Indrajit Maity
+**Author: Indrajit Maity  
 Email: indrajit.maity02@gmail.com**
 
-Example to solve the BSE with PyMEX for a relatively coarse grid
+Example to solve the BSE with PyMEX for a relatively coarse grid  
 NOTE: The spin-orbit coupling is included perturbatively.
 
 ## Steps for the calculations
