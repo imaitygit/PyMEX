@@ -10,8 +10,8 @@ NOTE: The spin-orbit coupling is included perturbatively.
 1. Run Wannier90 to create the k-grid within the [WANNIERIZE](./WANNIERIZE) 
 folder;
  
-*cd WANNIERIZE 
-PATH-2-WAN90/utility/kmesh.pl 9 9 1 wannier >> kpoints_wannier*
+*cd WANNIERIZE* 
+*PATH-2-WAN90/utility/kmesh.pl 9 9 1 wannier >> kpoints_wannier*
 
 You will find 81 kpoints written in `kpoints_wannier` file. We
 will utilize these k-points in all out future calculations.
@@ -66,17 +66,16 @@ write_hr = .true
 6. Copy the necessary files to [BSE](./BSE) folder and create the 
 BSE Hamiltonian and diagonalize; 
 
-*cd ../BSE
-ln -s ../WANNIERIZE/WSe2_u.mat .
-ln -s ../WANNIERIZE/WSe2_hr.dat .
-ln -s ../WANNIERIZE/WSe2_wsvec.dat .
-ln -s ../WANNIERIZE/WSe2.win .
-ln -s ../WANNIERIZE/WSe2.wout .
-ln -s ../WANNIERIZE/WSe2.bands .
-`python3 PATH-2-PYMEX-SRC/setup.py build_ext --inplace
-export PATH=${PYMEXSRC}/build:$PATH`
-mpirun -np numprocess python3 calc_Ham.py >& bse_out
-*
+*cd ../BSE*
+*ln -s ../WANNIERIZE/WSe2_u.mat ./*
+*ln -s ../WANNIERIZE/WSe2_hr.dat ./*
+*ln -s ../WANNIERIZE/WSe2_wsvec.dat ./*
+*ln -s ../WANNIERIZE/WSe2.win ./*
+*ln -s ../WANNIERIZE/WSe2.wout ./*
+*ln -s ../WANNIERIZE/WSe2.bands ./*
+*`python3 PATH-2-PYMEX-SRC/setup.py build_ext --inplace
+export PATH=${PYMEXSRC}/build:$PATH`*
+*mpirun -np numprocess python3 calc_Ham.py >& bse_out*
 
 The lines above creates soft links for required files, 
 complies the source codes (for cythonized part), and 
@@ -97,22 +96,21 @@ and  `WSe2_unit.bands` (with spin-orbit-coupling) from SIESTA.
 These are separate calculations done on the same k-grid. Take 
 a look at the [Delta_SOC](./Delta_SOC/).
 
-*cd ../Delta_SOC
-PATH-2-SIESTA/siesta WSe2_unpol.fdf >& WSe2_unpolar.out
-mv WSe2.bands WSe2_unit_unpolar.bands
-PATH-2-SIESTA/siesta WSe2.fdf >& WSe2.out
-mv WSe2.bands WSe2_unit.bands*
+*cd ../Delta_SOC*
+*PATH-2-SIESTA/siesta WSe2_unpol.fdf >& WSe2_unpolar.out*
+*mv WSe2.bands WSe2_unit_unpolar.bands*
+*PATH-2-SIESTA/siesta WSe2.fdf >& WSe2.out*
+*mv WSe2.bands WSe2_unit.bands*
 
 8. Copy the necessary files to `BSE` folder and perform the 
 optical conductivity calculations. 
 
-*cd ../BSE
-ln -s ../Delta_SOC/WSe2_unit_unpolar.bands .
-ln -s ../Delta_SOC/WSe2_unit.bands .
-`python3 PATH-2-PYMEX-SRC/setup.py build_ext --inplace
-export PATH=${PYMEXSRC}/build:$PATH`
-mpirun -np numprocess python3 calc_Absorb.py >& bse_out
-*
+*cd ../BSE*
+*ln -s ../Delta_SOC/WSe2_unit_unpolar.bands ./*
+*ln -s ../Delta_SOC/WSe2_unit.bands ./*
+*python3 PATH-2-PYMEX-SRC/setup.py build_ext --inplace*
+*export PATH=${PYMEXSRC}/build:$PATH*
+*mpirun -np numprocess python3 calc_Absorb.py >& bse_out*
 
 
 All Done!! You can now analyze the data and do cool things with 
