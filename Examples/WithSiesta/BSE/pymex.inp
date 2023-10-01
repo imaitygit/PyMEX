@@ -1,0 +1,78 @@
+# Single-particle calculatoion method
+# Options: "DFT" or "TB"
+BSE:
+DFT
+
+# Read from $n$ files and combine
+# Option: "full" or "isolated"
+# full: implies a DFT calculations on the whole system
+# isolated: implies VB and CB are separated (type II or type I)
+Layer:
+full
+
+# Single-particle eigenvalues
+# Description: DFT_engine Filename Min Max Skip Bandtype
+# Options:
+DFT:
+SIESTA WSe2.bands 5 7 2 VB 
+SIESTA WSe2.bands 7 9 2 CB
+
+# Coefficients i.e., C_nm_k matrices
+# description: Engine Filename Min Max Skip Bandtype
+Coefficients:
+WAN90 WSe2_u.mat 5 7 0 VB
+WAN90 WSe2_u.mat 7 9 0 CB
+
+# Hamiltonian
+# description: Engine Filename Bandtype
+Hamiltonian:
+WAN90 WSe2_hr.dat WSe2_wsvec.dat VB
+WAN90 WSe2_hr.dat WSe2_wsvec.dat CB
+
+# Structure file
+# description: Engine Filename Bandtype
+Structure:
+WAN90 WSe2.win
+
+# El-Hole interaction potential
+# description:Potential_name  layer                 type        Direct Exchange epsilon1 rho_0_1 a1_0 epsilon2 rho_02 a2_0
+# Options:    Keldysh         Intralayer/Interlayer simple/full True   True     epsilon1 rho_0_1 a1_0 epsilon2 rho_02 a2_0
+Interaction:
+Keldysh monolayer simple True True 1.0 45.09 3.32
+
+# Location of Wannier/TB functions
+# decsription: Engine File-for-locations
+Location:
+WAN90 WSe2.wout VB
+WAN90 WSe2.wout CB
+
+# MP-grid (treated as real-space grid)
+# description: n1 n2 n3
+Kgrid:
+9 9 1 
+
+# Absorption spectra
+# Spin-Orbit-correction options:
+# Toadd          Nature              Unfold       M2U(Moiré2unit map) Delta_SOC Non-polarized_at_unit  SOC_at_unit
+# True/False    Perturbation/Full    True/False/  Filename1           Filename2 Filename3 Filename4
+#                                    PMU          Filename1
+# Filename1-4 are only required for Perturbation with spin-orbit-coupling set to True.
+Absorption:
+True Perturbation False Moire2unit.npy DELTA.hdf5 WSe2_unit_unpolar.bands WSe2_unit.bands
+
+
+# Photon energies
+# Minimum       Maximum         Separation      Gaussian_width
+# (BSE_min-Minimum) (BSE_min+Maximum)  window   \sigma
+# See below (all in eV)
+Ephoton:
+-0.03 0.47 0.0025 0.005
+
+# Parallelization
+# MPI options for BSE construction:
+# Option1: bands/kpoints/full
+# Default: full;
+# Option2: thread/nothread
+# Other options are for cross-checking against old-versions
+parallel:
+full thread
