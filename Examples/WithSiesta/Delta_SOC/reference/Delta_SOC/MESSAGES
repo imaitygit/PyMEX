@@ -1,4 +1,0 @@
-WARNING: This spin-orbit implementation uses a local approximation.
-WARNING: From 4.2 and onwards the full non-local approximation is implemented
-WARNING: You are strongly advised to use >=4.2 versions!
-INFO: Job completed
