@@ -25,7 +25,7 @@ and make sure it makes sense. At this stage make sure the
 following lines are commented out:
 `
 !restart = default
-/
+\
 !bands_plot = true
 !write_u_matrices = .true
 !write_hr = .true
