@@ -81,8 +81,9 @@ The lines above creates soft links for required files,
 complies the source codes (for cythonized part), and 
 runs the BSE Hamiltonian construction. 
 **NOTE:** Ideally, the numprocess can be anything <= 
-Numberofkpoints x Numberofbands; In this case, it is=81 x 4. 
-However, we find the h5py-parallel works only for a integer 
+Numberofkpoints x NumberofValencebands x NumberofCondbands; 
+In this case, it is= 9 x 9 x 2 x 2 = 324. 
+However, we found the h5py-parallel works only for a integer 
 divisor of Numberofkpoints x Numberofbands. Therefore,
 the numprocess here can be 1, 2, 3, 4, 6, etc. upto 324. 
 However, if you enter 5 as numprocess the code will throw
@@ -96,21 +97,21 @@ and  `WSe2_unit.bands` (with spin-orbit-coupling) from SIESTA.
 These are separate calculations done on the same k-grid. Take 
 a look at the [Delta_SOC](./Delta_SOC/).
 
-*cd ../Delta_SOC*
-*PATH-2-SIESTA/siesta WSe2_unpol.fdf >& WSe2_unpolar.out*
-*mv WSe2.bands WSe2_unit_unpolar.bands*
-*PATH-2-SIESTA/siesta WSe2.fdf >& WSe2.out*
-*mv WSe2.bands WSe2_unit.bands*
+*cd ../Delta_SOC*  
+*PATH-2-SIESTA/siesta WSe2_unpol.fdf >& WSe2_unpolar.out*  
+*mv WSe2.bands WSe2_unit_unpolar.bands*  
+*PATH-2-SIESTA/siesta WSe2.fdf >& WSe2.out*  
+*mv WSe2.bands WSe2_unit.bands*  
 
 8. Copy the necessary files to `BSE` folder and perform the 
 optical conductivity calculations. 
 
-*cd ../BSE*
-*ln -s ../Delta_SOC/WSe2_unit_unpolar.bands ./*
-*ln -s ../Delta_SOC/WSe2_unit.bands ./*
-*python3 PATH-2-PYMEX-SRC/setup.py build_ext --inplace*
-*export PATH=${PYMEXSRC}/build:$PATH*
-*mpirun -np numprocess python3 calc_Absorb.py >& bse_out*
+*cd ../BSE*  
+*ln -s ../Delta_SOC/WSe2_unit_unpolar.bands ./*  
+*ln -s ../Delta_SOC/WSe2_unit.bands ./*  
+*python3 PATH-2-PYMEX-SRC/setup.py build_ext --inplace*  
+*export PATH=${PYMEXSRC}/build:$PATH*  
+*mpirun -np numprocess python3 calc_Absorb.py >& bse_out*  
 
 
 All Done!! You can now analyze the data and do cool things with 
