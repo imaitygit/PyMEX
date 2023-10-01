@@ -48,6 +48,7 @@ we are using 9x9x1 k-grid for the SCF calculations.
 4. Wannier90 one-shot projections;
 
 *cp WSe2.eigW WSe2.eig*
+
 *PATH-2-WAN90/wannier90.x WSe2*
 
 5. Wannier90 data to necessary files; Before you run `wannier90.x`
