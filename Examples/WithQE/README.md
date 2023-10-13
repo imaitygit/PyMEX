@@ -7,6 +7,10 @@ NOTE: The spin-orbit coupling is included in the electronic
       calculation. For a perturbative treatment, see the example 
       [WithSiesta](../WithSiesta).
 
+      YOU MUST change the number of orbital within the
+      `wan90tobse.py` to 10 for W and 6 for Se. Will be automated
+      in the future! 
+
 ## Steps for the calculations
 ### WANNIERIZE (5 Steps)
 
