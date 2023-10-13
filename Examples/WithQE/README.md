@@ -47,10 +47,10 @@ following lines are commented out (i.e., the use of `!`):
 3. Quantum ESPRESSO (QE) calculations for generating inputs of
 Wannier90; 
 
-*PATH-2-QE/pw.x -pd .true. -nk 3 -in WSe2.scf >& scf.out*
-*PATH-2-QE/pw.x -pd .true. -nk 3 -in WSe2.nscf >& nscf.out*
-*PATH-2-QE/bands.x -pd .true. -in bands.in*
-*PATH-2-QE/pw2wannier90.x -pd .true. -in WSe2.pw2wan >& pw2wan.out*
+*PATH-2-QE/pw.x -pd .true. -nk 3 -in WSe2.scf >& scf.out*  
+*PATH-2-QE/pw.x -pd .true. -nk 3 -in WSe2.nscf >& nscf.out*  
+*PATH-2-QE/bands.x -pd .true. -in bands.in*  
+*PATH-2-QE/pw2wannier90.x -pd .true. -in WSe2.pw2wan >& pw2wan.out*  
 
 QE calculations with inputs required for Wannier90. Please 
 take a look and familiarize yourself with the input and the 
