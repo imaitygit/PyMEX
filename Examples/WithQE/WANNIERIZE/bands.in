@@ -1,0 +1,4 @@
+&BANDS
+  prefix="WSe2",
+  filband="Bands_QE",
+/

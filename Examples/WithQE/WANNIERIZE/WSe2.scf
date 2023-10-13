@@ -1,0 +1,40 @@
+&CONTROL
+  calculation  = "scf"
+  prefix       = "WSe2"
+  pseudo_dir   = "."
+  outdir       = "."
+  verbosity="high"
+/
+&SYSTEM
+  ibrav     = 0
+  celldm(1) = 6.273890761180335
+  nat       = 3
+  ntyp      = 2
+  ecutwfc   = 35
+  lspinorb  = .true
+  noncolin  = .true
+/
+&ELECTRONS
+  conv_thr    = 1.D-8
+  mixing_beta = 0.3D0
+/
+&IONS
+ ion_dynamics="bfgs"
+/
+
+CELL_PARAMETERS {alat}
+1.0 0.0 0.0
+0.5 0.8660254 0.0
+0.0 0.0 6.024096385542169
+
+ATOMIC_SPECIES
+W 183.84 W.upf
+Se 78.96 Se.upf
+
+ATOMIC_POSITIONS {Angstrom}
+W  1.6600000000        0.9585052569        4.4860877494
+Se 0.0000000000        1.9169069794        6.1669978303
+Se 0.0000000000        1.9169063468        2.8054468917
+
+K_POINTS {automatic}
+9 9 1 0 0 0
