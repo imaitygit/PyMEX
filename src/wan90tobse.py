@@ -13,7 +13,7 @@ from read_inp import *
 from constants import *
 from functools import partial
 print_f = partial(print, flush=True)
-from cyfunc import grad_Hk_opt, grad_Hk_gamma
+from cyfunc import grad_Hk_opt, Hk_opt
 
 #MPI
 from mpi4py import MPI
@@ -105,44 +105,35 @@ class WAN2BSE(object):
     # 2-WF ending index for the above atom;
     # 3-5-Position of the atoms and WF (atom-centered WF)
     atoms = self.get_atom()
+    rloc = self.get_WF_loc()
     map_wf = np.empty((atoms.shape[0],6), dtype=object)
+
+    # Find the WFs for wach atom
     for i in range(atoms.shape[0]):
-      # index that keeps track of the number of WF
-      j = 0
-      for i in range(atoms.shape[0]):
-        # for W atom default WF is 10 (includes soc)
-        if atoms[i,0] == "W":
-          # SOC = 10 and without SOC = 5
-          num_wf = 5
-          map_wf[i,0] = i
-          map_wf[i,1] = j; map_wf[i,2] = j+num_wf
-          map_wf[i,3:] = atoms[i,1:]
-          j = j+num_wf
-        # for Se atom default WF is 6 (includes soc)
-        elif atoms[i,0] == "Se":
-          # SOC = 6 and without SOC = 3
-          num_wf = 3
-          map_wf[i,0] = i
-          map_wf[i,1] = j; map_wf[i,2] = j+num_wf
-          map_wf[i,3:] = atoms[i,1:]
-          j = j+num_wf
-        # for S atom default WF is 6 (includes soc)
-        elif atoms[i,0] == "S":
-          # SOC = 6 and without SOC = 3
-          num_wf = 3
-          map_wf[i,0] = i
-          map_wf[i,1] = j; map_wf[i,2] = j+num_wf
-          map_wf[i,3:] = atoms[i,1:]
-          j = j+num_wf
-        # for Mo atom default WF is 10 (includes soc)
-        elif atoms[i,0] == "Mo":
-          # SOC = 10 and without SOC = 5
-          num_wf = 5
-          map_wf[i,0] = i
-          map_wf[i,1] = j; map_wf[i,2] = j+num_wf
-          map_wf[i,3:] = atoms[i,1:]
-          j = j+num_wf
-    return map_wf
+      # For each atom find the WF centers that fall within
+      # 0.5 Angstrom for example; And exploit that multiple
+      # Wannier functions could be at the same atom to reduce
+      # memory consumption;
+      tmp = []
+      for j in range(rloc.shape[0]):
+        dist = rloc[j]-atoms[i,1:]
+        # 0.5 Angstrom: Ad-hoc but should be a reasonable estimate
+        # Since we used atom-centered orbitals
+        if np.linalg.norm(dist) < 0.5:
+          tmp.append(j)
+      map_wf[i,1] = np.min(np.array(tmp))
+      # +1: Because in python you only loop over 0->n-1
+      map_wf[i,2] = np.max(np.array(tmp))+1
+      map_wf[i,3:] = atoms[i,1:]
+    # Order them based on entries at column 1
+    sorted_ind = np.argsort(map_wf[:, 1])
+    # Reorder the array based on the sorted indices
+    map_wf_r = map_wf[sorted_ind]
+    map_wf_r[:,0] = np.arange(atoms.shape[0])
+    #if rank == root:
+    #  print_f("Before mapping", map_wf)
+    #  print_f("Mapped", map_wf_r)
+    return map_wf_r
 
 
   def get_WF_loc(self):
@@ -335,10 +326,42 @@ class WAN2BSE(object):
     return np.array(r_ws_mod) 
 
   
-  # Hamiltonian in reciprocal space 
+#  # Hamiltonian in reciprocal space 
+#  def get_Hk(self, path=False):
+#    """
+#    Lattice Fourier transform of the Hamiltonian
+#    Python version
+#    """
+#    A = self.get_lattice()
+#    B = self.get_reciprocal()
+#    if path == True:
+#      k = self.get_bandpath("kpoints")
+#    else:
+#      k = self.get_kpoints()
+#    r_ws, h_r_ab = self.get_Hr()
+#    #r_ws = self.get_wsvec()
+#    # Initialize for one k
+#    h_k_ab = np.zeros((np.shape(k)[0],np.shape(h_r_ab)[1],\
+#                       np.shape(h_r_ab)[2]), dtype=complex)
+#    for i in range(np.shape(k)[0]):
+#      for m in range(np.shape(h_r_ab)[1]):
+#        for n in range(np.shape(h_r_ab)[2]):
+#          tmp = 0.0
+#          for j in range(np.shape(h_r_ab)[0]):
+#            r_j = np.matmul(r_ws[j], A)
+#            k_j = np.matmul(k[i], B)
+#            tmp = tmp + (h_r_ab[j][m][n]* np.exp(1j*\
+#                         np.dot(k_j, r_j)))
+#          h_k_ab[i][m][n] = tmp
+#      #if i%10 == 0:
+#      #  print_f("Computed %d k-points"%(i))
+#    return h_k_ab       
+
+
   def get_Hk(self, path=False):
     """
-    Lattice Fourier transform of the Hamiltonian
+    H_k cythonised version
+    -- Not tested -- 
     """
     A = self.get_lattice()
     B = self.get_reciprocal()
@@ -346,24 +369,22 @@ class WAN2BSE(object):
       k = self.get_bandpath("kpoints")
     else:
       k = self.get_kpoints()
+
+    # Real-space hamiltonain
     r_ws, h_r_ab = self.get_Hr()
     #r_ws = self.get_wsvec()
-    # Initialize for one k
-    h_k_ab = np.zeros((np.shape(k)[0],np.shape(h_r_ab)[1],\
-                       np.shape(h_r_ab)[2]), dtype=complex)
-    for i in range(np.shape(k)[0]):
-      for m in range(np.shape(h_r_ab)[1]):
-        for n in range(np.shape(h_r_ab)[2]):
-          tmp = 0.0
-          for j in range(np.shape(h_r_ab)[0]):
-            r_j = np.matmul(r_ws[j], A)
-            k_j = np.matmul(k[i], B)
-            tmp = tmp + (h_r_ab[j][m][n]* np.exp(1j*\
-                         np.dot(k_j, r_j)))
-          h_k_ab[i][m][n] = tmp
-      if i%10 == 0:
-        print_f("Computed %d k-points"%(i))
-    return h_k_ab       
+
+    # Grad_Hk calculations
+    arr = np.zeros((np.shape(k)[0],np.shape(h_r_ab)[1],\
+                       np.shape(h_r_ab)[2]), dtype=complex) 
+    if rank == root:
+      print_f()
+      print_f("%d kpoints found"%(k.shape[0]))
+      print_f("Computing Gradient analytically")
+      print_f()
+    h_k_ab = Hk_opt(k, h_r_ab, r_ws,\
+                                A, B, arr)
+    return np.moveaxis(h_k_ab, 0, -1)
 
 
   def get_grad_Hk(self, path=False):
@@ -394,7 +415,7 @@ class WAN2BSE(object):
       if rank == root:
         print_f("Gamma point calculations.")
         print_f("Computing Gradient numerically")
-      grad_h_k_ab = grad_Hk_gamma(k, h_r_ab, r_ws,\
+      grad_h_k_ab = grad_Hk_opt(k, h_r_ab, r_ws,\
                                     A, B, arr)
     # Multiple k-points can be done efficiently
     else:

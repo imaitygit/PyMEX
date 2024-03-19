@@ -67,7 +67,7 @@ False Perturbation PMU Moire2unit.npy DELTA.hdf5 WS2_unit_unpolar.bands WS2_unit
 # (BSE_min-Minimum) (BSE_min+Maximum)  window	\sigma
 # See below (all in eV)
 Ephoton:
--0.03 0.47 0.005 0.005
+-0.03 0.47 0.0025 0.01
 
 # Parallelization
 # MPI options for BSE construction:

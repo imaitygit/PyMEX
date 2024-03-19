@@ -34,7 +34,7 @@ class POTENTIAL(object):
     Real-space grid/lattice points
     The Lattice points are generated sysmmetrically.
     """
-    # Presumes a mxmx1 grid
+    # Presumes a mxmx1 grid 
     if self.kgrid[0]%2 != 0.0:
       m = self.kgrid[0]//2
       Rvec = []
@@ -132,7 +132,7 @@ class POTENTIAL(object):
     tmp2_c = ang2crys(self.A_s, tmp2)
    # separation vector, rvec in crystal coordinate
     rvec_c = self.pair_pbc(tmp1_c, tmp2_c)
-    return np.linalg.norm(crys2ang(self.A_s, rvec_c)[:2])
+    return np.linalg.norm(crys2ang(self.A_s, rvec_c)[:3])
     
 
   def get_distvec(self, R,t_n1_m,t_n3_m):
@@ -400,7 +400,7 @@ class POTENTIAL(object):
           U = 1.0
           # Setting the on-site term
           # Convention: In same spirit as Keldysh !Test!
-          if r == 0.0:
+          if r <= a0:
             Vr_full[i,n1_m,n3_m] = -U*f*(1/a0)\
                                *1.0/(epsilon_d)
           else:

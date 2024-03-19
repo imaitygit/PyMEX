@@ -203,7 +203,11 @@ class BSE(object):
                       self.C_nc_k.shape[2]))
 
     t1 = time.time() 
-    self.gradx_Hk = self.wan2bse.get_grad_Hk() 
+    self.gradx_Hk = self.wan2bse.get_grad_Hk()
+    self.Hk = self.wan2bse.get_Hk()
+    pos = self.wan2bse.get_WF_loc()
+    #print_f("pos_x", pos[:,0])
+
     if rank == root:
       print_f("Time taken for Grad_Hk:%.4f secs"%(\
                time.time()-t1))
@@ -217,7 +221,7 @@ class BSE(object):
  
     # Photon enrgies to a file
     if rank == root: 
-      g = h5py.File("E_ph.hdf5", "w")
+      g = h5py.File("E_ph.hdf5", "w", libver='latest')
       dset = g.create_dataset("photon",\
                ((E_ph.shape[0])),\
                  dtype='float')
@@ -241,7 +245,7 @@ class BSE(object):
 
     if self.absorp[1].casefold() == "full":
       # HDF5 in parallel
-      f = h5py.File("SIGMA_full.hdf5", "w",\
+      f = h5py.File("SIGMA_full.hdf5", "w", libver='latest',\
                     driver='mpio',comm=comm)
       dset = f.create_dataset("sigma_xx",\
              ((E_ph.shape[0],)),\
@@ -254,20 +258,26 @@ class BSE(object):
       tmp = np.zeros((tmp_dim), dtype=float)
       t3 = time.time()
       for i in range(Elist[0], Elist[1]):
+
+        # Modified - 13/11/2023.
         if self.parallel[1].casefold() == "thread":
+          #print_f("positions x coord", pos[:,0])
+          #print_f("sigma", sigma)
+          #print_f("E_ph[i]", E_ph[i])
           tmp[i-Elist[0]] = sigma_xx_full_E_thread(eigval,eigvnew,\
                             self.C_nc_k,self.C_nv_k, self.gradx_Hk,\
+                            self.Hk, pos[:,0],\
                             E_ph[i],sigma).real
         else:
           tmp[i-Elist[0]] = sigma_xx_full_E(eigval,eigvnew,\
                             self.C_nc_k,self.C_nv_k, self.gradx_Hk,\
+                            self.Hk, pos[:,0],\
                             E_ph[i],sigma).real
+
       t4 = time.time()
       if rank == root:
         print_f("Calculations done. Will collect")
         print_f("Time for sigma calculations:%.4f secs."%(t4-t3))
-      # Delete un-necessary things
-      del eigval; del eigvnew
 
       with dset.collective:
         # Collects from every rank
@@ -330,7 +340,7 @@ class BSE(object):
         sigma = self.ephparam[3]
         # Photon enrgies to a file
         if rank == root:
-          g = h5py.File("E_ph_per.hdf5", "w")
+          g = h5py.File("E_ph_per.hdf5", "w", libver='latest')
           dset = g.create_dataset("photon",\
                  ((E_ph.shape[0])),\
                    dtype='float')
@@ -348,11 +358,12 @@ class BSE(object):
         comm.Barrier()
 
         # HDF5 in parallel
-        f = h5py.File("SIGMA_per_unit.hdf5", "w",\
+        f = h5py.File("SIGMA_per_unit.hdf5", "w", libver='latest',\
                       driver='mpio',comm=comm)
         dset = f.create_dataset("sigma_xx",\
                ((E_ph.shape[0],)),\
                dtype='float')
+        # IM : Modified - 13/11/2023
         # Computation of \Sigma_xx
         # Cythonized version
         # Every rank computes conductivity
@@ -363,10 +374,12 @@ class BSE(object):
           if self.parallel[1].casefold() == "thread":
             tmp[i-Elist[0]] = sigma_xx_per_E_thread(eigval_s,eigvnew,\
                             self.C_nc_k,self.C_nv_k, self.gradx_Hk,\
+                            self.Hk, pos[:,0],\
                             E_ph[i],sigma).real
           else:
             tmp[i-Elist[0]] = sigma_xx_per_E(eigval_s,eigvnew,\
                             self.C_nc_k,self.C_nv_k, self.gradx_Hk,\
+                            self.Hk, pos[:,0],\
                             E_ph[i],sigma).real
         if rank == root:
           print_f("Calculations done. Will collect")
@@ -409,7 +422,7 @@ class BSE(object):
 
         # Photon enrgies to a file
         if rank == root:
-          g = h5py.File("E_ph_per_pmu.hdf5", "w")
+          g = h5py.File("E_ph_per_pmu.hdf5", "w", libver='latest')
           dset = g.create_dataset("photon",\
                  ((E_ph.shape[0])),\
                    dtype='float')
@@ -427,7 +440,7 @@ class BSE(object):
         comm.Barrier()
 
         # HDF5 in parallel
-        f = h5py.File("SIGMA_per_pmu.hdf5", "w",\
+        f = h5py.File("SIGMA_per_pmu.hdf5", "w", libver='latest',\
                       driver='mpio',comm=comm)
         dset = f.create_dataset("sigma_xx",\
                ((E_ph.shape[0],)),\
@@ -442,10 +455,12 @@ class BSE(object):
           if self.parallel[1].casefold() == "thread":
             tmp[i-Elist[0]] = sigma_xx_per_E_thread(eigval_s,eigvnew,\
                             self.C_nc_k,self.C_nv_k, self.gradx_Hk,\
+                            self.Hk, pos[:,0],\
                             E_ph[i],sigma).real
           else:
             tmp[i-Elist[0]] = sigma_xx_per_E(eigval_s,eigvnew,\
                             self.C_nc_k,self.C_nv_k, self.gradx_Hk,\
+                            self.Hk, pos[:,0],\
                             E_ph[i],sigma).real
         if rank == root:
           print_f("Calculations done. Will collect")
@@ -485,8 +500,9 @@ class BSE(object):
     spin = 2
     shift = 0.0 # eV
     #-----
-    Delta_cvsk = np.zeros((self.E_ck.shape[0], self.E_ck.shape[0],\
+    Delta_cvsk = np.zeros((self.E_ck.shape[0], self.E_vk.shape[0],\
                            spin, self.E_ck.shape[1]), dtype=float)
+
     for c in range(self.E_ck.shape[0]):
       for v in range(self.E_vk.shape[0]):
         for s in range(spin):
@@ -516,7 +532,7 @@ class BSE(object):
     spin = 2
     shift = 0.0 # eV
     #-----
-    Delta_cvsk = np.zeros((self.E_ck.shape[0], self.E_ck.shape[0],\
+    Delta_cvsk = np.zeros((self.E_ck.shape[0], self.E_vk.shape[0],\
                            spin, self.E_ck.shape[1]), dtype=float)
     for c in range(self.E_ck.shape[0]):
       for v in range(self.E_vk.shape[0]):
@@ -692,10 +708,16 @@ class BSE(object):
         #------------------------------
         # Hybrid version: python+cython
         #----------------------------
-        tmp = H_optfull(self.C_nc_k, self.C_nv_k,\
-                self.E_ck, self.E_vk, c,v,k,\
-                myatoms, self.Rvec, self.kvec,\
-                self.V_r_keld, self.V_r_coul)
+        if self.parallel[1].casefold() == "thread":
+          tmp = H_optfull_thread(self.C_nc_k, self.C_nv_k,\
+                  self.E_ck, self.E_vk, c,v,k,\
+                  myatoms, self.Rvec, self.kvec,\
+                  self.V_r_keld, self.V_r_coul)
+        else:
+          tmp = H_optfull(self.C_nc_k, self.C_nv_k,\
+                  self.E_ck, self.E_vk, c,v,k,\
+                  myatoms, self.Rvec, self.kvec,\
+                  self.V_r_keld, self.V_r_coul)
         if rank == root:
           print_f("Calculations done. Will collect")
 
@@ -739,7 +761,7 @@ class BSE(object):
       self.is_hermitian(H_eh)
       eigval, eigvec = np.linalg.eigh(H_eh)
       print_f("Diagonalization of the BSE Hamiltonian done")
-      print_f("eigval[0:12]", eigval[0:12])
+      print_f("First 16 eignevalues", eigval[:16])
 
       # Store eigenvalues
       g = h5py.File("Eigval.hdf5", "w")
@@ -1243,6 +1265,104 @@ class BSE(object):
       pass
 
 
+  def get_hole_density(self, i_vb):
+    """
+    Extracts the Wannier90 derived hole
+    density for a specific valence band
+    @input
+      i_vb: Intended valence band index 
+            0: Valence band maximum
+            1: 1st band below VBM
+            ....
+    @output
+      loc_r: (k,x,y,z) format
+             k is the momentum
+             x is the orbital location along x
+             y is the orbital location along y
+             z is the charge density associated 
+               with the in-plane positions
+    NOTE: All counting starts from 0 based on Python
+    """
+    if rank == root:
+      map_wf = self.wan2bse.map_WF()
+      pos_wf = map_wf[:,3:6].astype(float)
+      ind_wf = map_wf[:,0:3].astype(int)
+      # Extract the valence band index ranging
+      # from valence band maximum to below
+      # That's why i_vb is subtracted.
+      print_f()
+      n_vb = self.C_nv_k.shape[1]-(i_vb+1)
+      print_f("NOTE: ")
+      print_f("Extracting data of the %d-th valence band"%(n_vb))
+      print_f("Counting from top and %d VB is mapped"%(i_vb))
+      print_f()
+      loc_r = np.zeros((self.C_nv_k.shape[2],\
+                        ind_wf.shape[0], 4),\
+                        dtype=float)
+      # Extract density for all k-points
+      for k in range(self.C_nv_k.shape[2]):
+        for i in range(ind_wf.shape[0]):
+          tmp = 0.0
+          for j in range(ind_wf[i,1], ind_wf[i,2]):
+            tmp = tmp + np.square(np.abs(self.C_nv_k[j,n_vb,k]))
+          loc_r[k,i] = np.array([pos_wf[i,0],\
+                                 pos_wf[i,1],\
+                                 pos_wf[i,2],\
+                                 tmp])
+
+      savename = "Hole_" + str(i_vb)+ ".hdf5"
+      with h5py.File(savename, 'w') as f:
+        f.create_dataset('density', data=loc_r)
+      print_f("Written the Hole density to a HDF5 file")
+    return None
+      
+
+  def get_electron_density(self, i_cb):
+    """
+    Extracts the Wannier90 derived electron
+    density for a specific conduction band.
+    @input
+      i_cb: Intended conduction band index 
+            0: Conduction band minimum
+            1: 1st band above CBM
+            ....
+    @output
+      loc_r: (k,x,y,z) format
+             k is the momentum
+             x is the orbital location along x
+             y is the orbital location along y
+             z is the charge density associated 
+               with the in-plane positions
+    NOTE: All counting starts from 0 based on Python
+    """
+    if rank == root:
+      # This is going to be used for n1
+      map_wf = self.wan2bse.map_WF()
+      pos_wf = map_wf[:,3:6].astype(float)
+      ind_wf = map_wf[:,0:3].astype(int)
+      print_f()
+      print_f("Extracting data of the %d-th conduction band"%(i_cb))
+      print_f()
+      loc_r = np.zeros((self.C_nc_k.shape[2],\
+                        ind_wf.shape[0],4),\
+                        dtype=float)
+      # Extract density for all k-points
+      for k in range(self.C_nc_k.shape[2]):
+        for i in range(ind_wf.shape[0]):
+          tmp = 0.0
+          for j in range(ind_wf[i,1], ind_wf[i,2]):
+            tmp = tmp + np.square(np.abs(self.C_nv_k[j,i_cb,k]))
+          loc_r[k,i] = np.array([pos_wf[i,0],\
+                                 pos_wf[i,1],\
+                                 pos_wf[i,2],\
+                                 tmp])
+      savename = "Electron_" + str(i_cb)+ ".hdf5"
+      with h5py.File(savename, 'w') as f:
+        f.create_dataset('density', data=loc_r)
+      print_f("Written the Electron density to a HDF5 file")
+    return None
+
+
   def exciton_r(self, S, rh, savename):
     """
     Computes the exciton wave-function in real-space
@@ -1257,7 +1377,7 @@ class BSE(object):
     # NOTE: Normally positions are outputted in angstrom 
     n3 = self.get_hole_loc(rh)
     if n3 is None:
-      print_f("Use a hole position (rh) that falls within 0.1 Ang")
+      print_f("Use a hole position (rh) that falls within 0.2 Ang")
       comm.Abort(1)
     else:
       if rank == root:
@@ -1266,6 +1386,8 @@ class BSE(object):
         print_f()
     # This is going to be used for n1
     map_wf = self.wan2bse.map_WF()
+    if rank == root:
+      print_f("Mapped Wannier functions", map_wf)
     pos_wf = map_wf[:,3:6].astype(float)
     ind_wf = map_wf[:,0:3].astype(int)
 
@@ -1292,7 +1414,7 @@ class BSE(object):
                          self.C_nc_k.shape[2]))
 
     # Old checks
-    #self.Rvec = self.potential.set_Rvec(9)
+    #self.Rvec = self.potential.set_Rvec(5)
 
     # Cythonized calculations with thread-support
     data = np.empty((ind_wf.shape[0], self.Rvec.shape[0]),\
@@ -1303,7 +1425,8 @@ class BSE(object):
     # Use thread always to get things quickly done
     data[:,:] = opt_exciton_r_thread(AS_cvk, self.Rvec, self.kvec,\
                          self.C_nc_k, self.C_nv_k,\
-                         ind_wf, pos_wf, n3[0:3].astype(int))
+                         ind_wf, pos_wf, n3[0:3].astype(int),\
+                         rh)
     if rank == root:
       # File for exciton wave-function in real space
       np.save(savename, data)
@@ -1324,5 +1447,5 @@ class BSE(object):
       pos = map_wf[i,3:6]
       # Closest Wannier function location for a given hole
       # coordinate
-      if np.linalg.norm(np.subtract(pos, rh)) < 0.01:
+      if np.linalg.norm(np.subtract(pos, rh)) < 0.5:
         return map_wf[i,:]

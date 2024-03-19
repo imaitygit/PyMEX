@@ -7,7 +7,6 @@ from cython.parallel import prange, parallel
 @cython.boundscheck(False)
 @cython.wraparound(False)
 
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double complex opt_exciton_r_partial(double complex [:,:,:] AS_cvk,\
@@ -15,51 +14,41 @@ cdef double complex opt_exciton_r_partial(double complex [:,:,:] AS_cvk,\
                   double complex [:,:,:] C_nc_k,\
                   double complex [:,:,:]C_nv_k,\
                   long [:] ind_wf_loc, double [:] map_wf_loc,\
-                  long [:] n3list) nogil:
+                  long [:] n3list, double [:] rh) nogil:
   """
   Exciton envelope calculations one of the  Wannier Function
   centers. This helps to speed up the calculations with Threads.
   """
-  cdef int c, v, k, cp, vp, kp
+  cdef int c, v, k
   cdef int n1, n3, n1min, n1max, n3min, n3max
-  cdef double complex phase, tmp, tmp2, tmp3
+  cdef double complex phase_h, phase_e, tmp_h, tmp_e, tmp
   cmax = C_nc_k.shape[1]; vmax = C_nv_k.shape[1]
   kmax = C_nc_k.shape[2]
   n3min = n3list[1]; n3max = n3list[2]
   n1min = ind_wf_loc[1]; n1max = ind_wf_loc[2]
-  # ------------
-  # Thread will be used later  
-  # ------------
-  # This for real-space unit cells
 
   tmp = 0.0
   for c in range(cmax):
     for v in range(vmax):
       for k in range(kmax):
-        for cp in range(cmax):
-          for vp in range(vmax):
-            for kp in range(kmax):
-              # Phase- e^{-(i(k-k').Rj1)}
-              # Rv is only for a particular unit-cell
-              phase = function.cexp(-1j*\
-              ( ((kvec[k,0]-kvec[kp,0])*Rv[0])+\
-                ((kvec[k,1]-kvec[kp,1])*Rv[1])+\
-                ((kvec[k,2]-kvec[kp,2])*Rv[2]) )\
-                )
-              # Hole coefficenits contributions
-              tmp2 = 0.0
-              for n3 in range(n3min, n3max):
-                tmp2 = tmp2 +\
-                (C_nv_k[n3,v,k] * function.conj(C_nv_k[n3,vp,kp]))
-              # Electron coefficients for n1
-              tmp3 = 0.0
-              for n1 in range(n1min, n1max):
-                tmp3 = tmp3 +\
-                (function.conj(C_nc_k[n1,c,k]) * C_nc_k[n1,cp,kp]) 
-              # Terms to sum up for each Wannier centers
-              tmp = tmp +\
-              (function.conj(AS_cvk[c,v,k])* AS_cvk[cp,vp,kp] *\
-               phase * tmp2 * tmp3)
+        phase_e = function.cexp(1j*\
+                ( (kvec[k,0]*(Rv[0]))+\
+                  (kvec[k,1]*(Rv[1]))+\
+                  (kvec[k,2]*(Rv[2]))\
+                ))
+        # Hole coefficients for n3
+        tmp_h = 0.0
+        for n3 in range(n3min, n3max):
+          tmp_h = tmp_h + (function.conj(C_nv_k[n3,v,k]))
+        # Electron coefficients for n1
+        tmp_e = 0.0
+        for n1 in range(n1min, n1max):
+          tmp_e = tmp_e +\
+                (C_nc_k[n1,c,k]*phase_e)
+
+        tmp = tmp +\
+              (AS_cvk[c,v,k]*tmp_h*\
+               tmp_e)
   return tmp
 
 
@@ -70,7 +59,8 @@ def opt_exciton_r_thread(double complex [:,:,:] AS_cvk,\
                   double complex [:,:,:] C_nc_k,\
                   double complex [:,:,:]C_nv_k,\
                   long [:,:] ind_wf, double [:,:] map_wf,\
-                  long [:] n3list):
+                  long [:] n3list,\
+                  double [:] rh):
   """
   Exciton envelope calculations for all the  Wannier Function
   centers. This helps to speed up the calculations with Threads.
@@ -85,16 +75,14 @@ def opt_exciton_r_thread(double complex [:,:,:] AS_cvk,\
   N = Rvec.shape[0]
   nind = ind_wf.shape[0]
 
-  # 
   for r in range(N):
-    # use all the available threads
     for i in prange(nind, nogil=True, schedule='dynamic'):
       tmp_arr[i] = opt_exciton_r_partial(AS_cvk, Rvec[r,:], kvec,\
                     C_nc_k, C_nv_k, ind_wf[i,:], map_wf[i,:],\
-                    n3list)
+                    n3list, rh)
     Xr[:,r] = tmp_arr
-  return Xr 
-           
+  return Xr
+
       
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -114,12 +102,13 @@ def opt_exciton_r(double complex [:,:,:] AS_cvk,\
        np.zeros((ind_wf.shape[0], Rvec.shape[0]), dtype=complex)
   cdef int N, c, v, k, cp, vp, kp
   cdef int r, n1, n3, n1min, n1max, n3min, n3max
-  cdef double complex phase, tmp, tmp2, tmp3
+  cdef double complex phase_e, phase_h, tmp, tmp2, tmp3
   cmax = C_nc_k.shape[1]; vmax = C_nv_k.shape[1]
   kmax = C_nc_k.shape[2]
   n3min = n3list[1]; n3max = n3list[2]
   N = Rvec.shape[0]
-  # Simplest approach
+  # ----------------
+  # No thread
   # ----------------
   # This for real-space unit cells
   nind = ind_wf.shape[0]
@@ -135,10 +124,10 @@ def opt_exciton_r(double complex [:,:,:] AS_cvk,\
                 for kp in range(kmax):
                   # Phase- e^{-(i(k-k').Rj1)}
                   phase = function.cexp(-1j*\
-                  ( ((kvec[k,0]-kvec[kp,0])*(Rvec[r,0]-map_wf[ind_wf[i,0],0]))+\
-                    ((kvec[k,1]-kvec[kp,1])*(Rvec[r,1]-map_wf[ind_wf[i,0],1]))+\
-                    ((kvec[k,2]-kvec[kp,2])*Rvec[r,2]))\
-                    )
+                  ( ((kvec[k,0]-kvec[kp,0])*(Rvec[r,0]+map_wf[ind_wf[i,0],0]))+\
+                    ((kvec[k,1]-kvec[kp,1])*(Rvec[r,1]+map_wf[ind_wf[i,0],1]))+\
+                    ((kvec[k,2]-kvec[kp,2])*(Rvec[r,2]+map_wf[ind_wf[i,0],2]))\
+                    ))
                   # Hole coefficenits contributions
                   tmp2 = 0.0
                   for n3 in range(n3min, n3max):
@@ -246,6 +235,8 @@ def sigma_xx_full_E(double [:] eigval,\
                double complex [:,:,:] C_nc_k,\
                double complex [:,:,:] C_nv_k,\
                double complex [:,:,:] gradx_Hk,\
+               double complex [:,:,:] Hk,\
+               double [:] t_x,\
                double E_ph, double sigma):
   """
   Computes the \sigma_xx as in Phys. Rev. B 97, 205409(2018).
@@ -278,7 +269,9 @@ def sigma_xx_full_E(double [:] eigval,\
             for n1 in range(n1_max):
               for n2 in range(n2_max):
                 s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
-                     C_nc_k[n2,j,y]*gradx_Hk[n1,n2,y])
+                     C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+                     (1j*(t_x[n1]-t_x[n2])*Hk[n1,n2,y])\
+                     ))
             # Exciton eigenvectors go here
             tmp1 = tmp1 + (s1*eigvnew[i,j,x,y])
       # Delta function is represented by Gaussian
@@ -295,6 +288,8 @@ cdef double complex sigma_partial_full(double myeigval,\
                double complex [:,:,:] C_nc_k,\
                double complex [:,:,:] C_nv_k,\
                double complex [:,:,:] gradx_Hk,\
+               double complex [:,:,:] Hk,\
+               double [:] t_x,\
                double E_ph, double sigma) nogil:
   cdef int n1,n2,y, j,x
   cdef int n1_max, n2_max, cb,vb,k
@@ -318,7 +313,9 @@ cdef double complex sigma_partial_full(double myeigval,\
         for n1 in range(n1_max):
           for n2 in range(n2_max):
             s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
-                 C_nc_k[n2,j,y]*gradx_Hk[n1,n2,y])
+                 C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+                 (1j*(t_x[n1]-t_x[n2])*Hk[n1,n2,y])\
+                 ))
         # Exciton eigenvectors go here
         tmp1 = tmp1 + (s1*myeigvnew[j,x,y])
   # Delta function is represented by Gaussian
@@ -335,6 +332,8 @@ def sigma_xx_full_E_thread(double [:] eigval,\
                double complex [:,:,:] C_nc_k,\
                double complex [:,:,:] C_nv_k,\
                double complex [:,:,:] gradx_Hk,\
+               double complex [:,:,:] Hk,\
+               double [:] t_x,\
                double E_ph, double sigma):
   """
   Computes the \sigma_xx as in Phys. Rev. B 97, 205409(2018).
@@ -349,8 +348,8 @@ def sigma_xx_full_E_thread(double [:] eigval,\
   # Uses default number of threads available
   for i in prange(m, nogil=True, schedule='dynamic'):
     tmp2 += sigma_partial_full(eigval[i],\
-               eigvnew[i,:,:,:], C_nc_k, C_nv_k, gradx_Hk, E_ph,\
-               sigma)
+               eigvnew[i,:,:,:], C_nc_k, C_nv_k, gradx_Hk,\
+               Hk, t_x, E_ph, sigma)
   return tmp2
 
 
@@ -361,6 +360,8 @@ cdef double complex sigma_partial_per(double[:] myeigval,\
                double complex [:,:,:] C_nc_k,\
                double complex [:,:,:] C_nv_k,\
                double complex [:,:,:] gradx_Hk,\
+               double complex [:,:,:] Hk,\
+               double [:] t_x,\
                double E_ph, double sigma) nogil:
 
   cdef int n1,n2,y, i,j,x
@@ -384,7 +385,9 @@ cdef double complex sigma_partial_per(double[:] myeigval,\
         for n1 in range(n1_max):
           for n2 in range(n2_max):
             s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
-                 C_nc_k[n2,j,y]*gradx_Hk[n1,n2,y])
+                 C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+                 (1j*(t_x[n1]-t_x[n2])*Hk[n1,n2,y])\
+                 ))
         # Exciton eigenvectors go here
         tmp1 = tmp1 + (s1*myeigvnew[j,x,y])
   # Delta function is represented by Gaussian
@@ -406,6 +409,8 @@ def sigma_xx_per_E_thread(double [:,:] eigval_s,\
                double complex [:,:,:] C_nc_k,\
                double complex [:,:,:] C_nv_k,\
                double complex [:,:,:] gradx_Hk,\
+               double complex [:,:,:] Hk,\
+               double [:] t_x,\
                double E_ph, double sigma):
   """
   Computes the \sigma_xx as in Phys. Rev. B 97, 205409(2018).
@@ -423,8 +428,8 @@ def sigma_xx_per_E_thread(double [:,:] eigval_s,\
   # Uses default number of threads available
   for i in prange(m, nogil=True, schedule='dynamic'):
     tmp2 += sigma_partial_per(eigval_s[i,:],\
-               eigvnew[i,:,:,:], C_nc_k, C_nv_k, gradx_Hk, E_ph,\
-               sigma)
+               eigvnew[i,:,:,:], C_nc_k, C_nv_k, gradx_Hk,\
+               Hk, t_x, E_ph, sigma)
   return tmp2
 
 
@@ -435,6 +440,8 @@ def sigma_xx_per_E(double [:,:] eigval_s,\
                double complex [:,:,:] C_nc_k,\
                double complex [:,:,:] C_nv_k,\
                double complex [:,:,:] gradx_Hk,\
+               double complex [:,:,:] Hk,\
+               double [:] t_x,\
                double E_ph, double sigma):
   """
   Computes the \sigma_xx as in Phys. Rev. B 97, 205409(2018).
@@ -468,7 +475,9 @@ def sigma_xx_per_E(double [:,:] eigval_s,\
             for n1 in range(n1_max):
               for n2 in range(n2_max):
                 s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
-                     C_nc_k[n2,j,y]*gradx_Hk[n1,n2,y])
+                     C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+                     (1j*(t_x[n1]-t_x[n2])*Hk[n1,n2,y])\
+                     ))
             # Exciton eigenvectors go here
             tmp1 = tmp1 + (s1*eigvnew[i,j,x,y])
       # Delta function is represented by Gaussian
@@ -648,19 +657,102 @@ def H_optfull(double complex [:,:,:] C_nc_k,\
 
 
 @cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double complex H_optfull_partial(\
+                    double complex [:,:,:] C_nc_k,\
+                    double complex [:,:,:] C_nv_k,\
+                    long c, long v, long k,\
+                    long cp, long vp, long kp,\
+                    long [:,:] myatoms, double [:,:]Rvec,\
+                    double [:,:] kvec,\
+                    double [:,:,:] V_r_keld,\
+                    double [:,:,:] V_r_coul,\
+                    long i) nogil:
+  cdef long d,j,e,f,m1,m2
+  cdef double complex val
+  m1 = myatoms.shape[0]; m2 = Rvec.shape[0]
+
+  val = 0.0
+  # Loop over orbitals for each atom site
+  for d in range(myatoms[i,1],myatoms[i,2]):
+    for j in range(m1):
+      for e in range(myatoms[j,1],myatoms[j,2]):
+        for f in range(m2):
+          val = val \
+        + (C_nc_k[d,cp,kp] * C_nv_k[e,v,k] * \
+        function.conj(C_nv_k[e,vp,kp]*C_nc_k[d,c,k])\
+        * V_r_keld[f,i,j] * function.cexp(1j*\
+        ((kvec[k][0]-kvec[kp][0])*Rvec[f][0]\
+        +(kvec[k][1]-kvec[kp][1])*Rvec[f][1]\
+        +(kvec[k][2]-kvec[kp][2])*Rvec[f][2])))\
+        -(function.conj(C_nc_k[d,c,k]*C_nv_k[e,vp,kp])\
+         * C_nv_k[d,v,k] * C_nc_k[e,cp,kp] \
+         * V_r_coul[f,i,j])
+  return val
+
+
+@cython.boundscheck(False)
 @cython.cdivision(True)
-def grad_Hk_gamma( double [:,:] k,\
+def H_optfull_thread(double complex [:,:,:] C_nc_k,\
+           double complex [:,:,:] C_nv_k,\
+           double [:,:] E_ck, double [:,:] E_vk,\
+           long c, long v, long k,\
+           long [:,:] myatoms, double [:,:] Rvec,\
+           double [:,:] kvec, double [:,:,:] V_r_keld,\
+           double [:,:,:] V_r_coul):
+  cdef long kl, num_c, num_v, num_k
+  cdef long cp, vp, kp, kloc
+  cdef double E_cvk
+  cdef double complex tmp
+  cdef long i, m1, m2
+  cdef double complex [:] tmp_array
+
+  num_c = C_nc_k.shape[1]
+  num_v = C_nv_k.shape[1]
+  num_k = C_nc_k.shape[2]
+
+  m1 = myatoms.shape[0]; m2 = Rvec.shape[0]
+
+  cdef double complex [:,:,:] arr = np.empty((num_c,num_v,num_k), dtype=complex)
+  for cp in range(num_c):
+    for vp in range(num_v):
+      for kp in range(num_k):
+        # Single-particle electronic structure
+        # DFT/TB/Wannier90/GW shouldn't matter
+        if cp == c and vp == v and kp == k:
+          E_cvk = (E_ck[c][k] -\
+                   E_vk[v][k])
+        else:
+          E_cvk = 0.0
+
+        tmp_array = np.zeros((myatoms.shape[0]), dtype=complex)
+        for i in prange(m1, nogil=True, schedule='dynamic'):
+          tmp_array[i] = H_optfull_partial(C_nc_k, C_nv_k,\
+                                        c, v, k, cp, vp, kp,\
+                                        myatoms, Rvec, kvec,\
+                                        V_r_keld, V_r_coul,\
+                                        i)
+        tmp = 0.0
+        for i in range(m1):
+          tmp = tmp + tmp_array[i]
+
+        arr[cp][vp][kp] = tmp/m2 + E_cvk
+  return arr
+
+
+@cython.boundscheck(False)
+def Hk_opt( double [:,:] k,\
                  double complex [:,:,:] h_r_ab,\
                  double [:,:] r_ws,\
                  double [:,:] A, double [:,:] B,
-                 double complex [:,:,:] grad_h_k_ab):
+                 double complex [:,:,:] h_k_ab):
   """
   Convention II:
     H(k): \sum_{R} h_r_ab*e^{ik.R} (1j*R_x)
   Cythonized part of grad_Hk calculations
   Note that this implements grad_Hk calculations
   as you expect analytically.
-  IM: Not sure what to do with Gamma point   
+   
   """
   cdef int i, m, n, j, kmax, a, b, r
   cdef double complex tmp
@@ -670,8 +762,8 @@ def grad_Hk_gamma( double [:,:] k,\
   a = h_r_ab.shape[1]
   b = h_r_ab.shape[2]
   r = h_r_ab.shape[0]
-
   dim = 3 
+
   cdef double [:] r_j = np.zeros((dim), dtype=float)
   cdef double [:] k_i = np.zeros((dim), dtype=float)
 
@@ -698,6 +790,6 @@ def grad_Hk_gamma( double [:,:] k,\
             # \sum_{R} h_r_ab*e^{ik.R} (1j*R_x)
             tmp = tmp + (h_r_ab[j][m][n]* function.cexp(1j*\
                         ((r_j[0]*k_i[0]) + (r_j[1]*k_i[1])+\
-                         (r_j[2]*k_i[2])))* 1j*r_j[0])
-          grad_h_k_ab[i][m][n] = tmp
-  return grad_h_k_ab
+                         (r_j[2]*k_i[2]))))
+          h_k_ab[i][m][n] = tmp
+  return h_k_ab

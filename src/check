@@ -1,0 +1,147 @@
+10d9
+< 
+18c17
+<                   long [:] n3list) nogil:
+---
+>                   long [:] n3list, double [:] rh) nogil:
+23c22
+<   cdef int c, v, k, cp, vp, kp
+---
+>   cdef int c, v, k
+25c24
+<   cdef double complex phase, tmp, tmp2, tmp3
+---
+>   cdef double complex phase_h, phase_e, tmp_h, tmp_e, tmp
+30,33d28
+<   # ------------
+<   # Thread will be used later  
+<   # ------------
+<   # This for real-space unit cells
+39,62c34,51
+<         for cp in range(cmax):
+<           for vp in range(vmax):
+<             for kp in range(kmax):
+<               # Phase- e^{-(i(k-k').Rj1)}
+<               # Rv is only for a particular unit-cell
+<               phase = function.cexp(-1j*\
+<               ( ((kvec[k,0]-kvec[kp,0])*Rv[0])+\
+<                 ((kvec[k,1]-kvec[kp,1])*Rv[1])+\
+<                 ((kvec[k,2]-kvec[kp,2])*Rv[2]) )\
+<                 )
+<               # Hole coefficenits contributions
+<               tmp2 = 0.0
+<               for n3 in range(n3min, n3max):
+<                 tmp2 = tmp2 +\
+<                 (C_nv_k[n3,v,k] * function.conj(C_nv_k[n3,vp,kp]))
+<               # Electron coefficients for n1
+<               tmp3 = 0.0
+<               for n1 in range(n1min, n1max):
+<                 tmp3 = tmp3 +\
+<                 (function.conj(C_nc_k[n1,c,k]) * C_nc_k[n1,cp,kp]) 
+<               # Terms to sum up for each Wannier centers
+<               tmp = tmp +\
+<               (function.conj(AS_cvk[c,v,k])* AS_cvk[cp,vp,kp] *\
+<                phase * tmp2 * tmp3)
+---
+>         phase_e = function.cexp(1j*\
+>                 ( (kvec[k,0]*(Rv[0]))+\
+>                   (kvec[k,1]*(Rv[1]))+\
+>                   (kvec[k,2]*(Rv[2]))\
+>                 ))
+>         # Hole coefficients for n3
+>         tmp_h = 0.0
+>         for n3 in range(n3min, n3max):
+>           tmp_h = tmp_h + (function.conj(C_nv_k[n3,v,k]))
+>         # Electron coefficients for n1
+>         tmp_e = 0.0
+>         for n1 in range(n1min, n1max):
+>           tmp_e = tmp_e +\
+>                 (C_nc_k[n1,c,k]*phase_e)
+> 
+>         tmp = tmp +\
+>               (AS_cvk[c,v,k]*tmp_h*\
+>                tmp_e)
+73c62,63
+<                   long [:] n3list):
+---
+>                   long [:] n3list,\
+>                   double [:] rh):
+88d77
+<   # 
+90d78
+<     # use all the available threads
+94c82
+<                     n3list)
+---
+>                     n3list, rh)
+96,98c84,86
+<   return Xr 
+<            
+<       
+---
+>   return Xr
+> 
+> 
+252c240,241
+<                double E_ph, double sigma):
+---
+>                double E_ph, double sigma,
+>                double alat):
+283,286c272,287
+<                 s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
+<                      C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+<                      (1j*(t_x[n1]-t_x[n2])*Hk[n1,n2,y])\
+<                      ))
+---
+>                 # Check if PBC improves low-angle
+>                 if t_x[n1]-t_x[n2] > 0.5*alat:
+>                   s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
+>                        C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+>                        (1j*(t_x[n1]-t_x[n2]-alat)*Hk[n1,n2,y])\
+>                        ))
+>                 elif t_x[n2]-t_x[n1] > 0.5*alat:
+>                   s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
+>                        C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+>                        (1j*(t_x[n1]-t_x[n2]+alat)*Hk[n1,n2,y])\
+>                        ))
+>                 else:
+>                   s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
+>                        C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+>                        (1j*(t_x[n1]-t_x[n2])*Hk[n1,n2,y])\
+>                        ))
+305c306,307
+<                double E_ph, double sigma) nogil:
+---
+>                double E_ph, double sigma,
+>                double alat) nogil:
+327,330c329,344
+<             s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
+<                  C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+<                  (1j*(t_x[n1]-t_x[n2])*Hk[n1,n2,y])\
+<                  ))
+---
+>           # Check if PBC improves low-angle
+>             if t_x[n1]-t_x[n2] > 0.5*alat:
+>               s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
+>                    C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+>                    (1j*(t_x[n1]-t_x[n2]-alat)*Hk[n1,n2,y])\
+>                    ))
+>             elif t_x[n2]-t_x[n1] > 0.5*alat:
+>               s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
+>                    C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+>                    (1j*(t_x[n1]-t_x[n2]+alat)*Hk[n1,n2,y])\
+>                    ))
+>             else:
+>               s1 = s1 + (function.conj(C_nv_k[n1,x,y])*\
+>                    C_nc_k[n2,j,y]*(gradx_Hk[n1,n2,y]-\
+>                    (1j*(t_x[n1]-t_x[n2])*Hk[n1,n2,y])\
+>                    ))
+349c363,364
+<                double E_ph, double sigma):
+---
+>                double E_ph, double sigma,
+>                double alat):
+364c379
+<                Hk, t_x, E_ph, sigma)
+---
+>                Hk, t_x, E_ph, sigma, alat)
