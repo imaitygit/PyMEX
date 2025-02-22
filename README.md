@@ -22,18 +22,19 @@ In the Wannier function basis, the BSE Hamiltonian can be approximated by using
 the localized and orthogonal nature of Wannier functions, along with the
 translational invariance of Coulomb interactions:
 
-$$
-\langle cv{\bf k}| \hat{H}_{\text{BSE}} |c^{\prime}v^{\prime}{\bf k^{\prime}}\rangle 
-= (\epsilon_{c{\bf k}} - \epsilon_{v{\bf k}}) \delta_{cc^\prime} \delta_{vv^\prime} \delta_{\bf kk^\prime} 
--\frac{1}{N} \sum_{{\bf R},n_{1},n_{3}} {(C^{\bf k}_{n_{1}c}})^* C^{\bf k^\prime}_{n_{1}c^\prime} 
-{C^{\bf k}_{n_{3}v}} {(C^{\bf k^\prime}_{n_{3}v^\prime})}^* W({\bf R} + {\bf t}_{n_3} - {\bf t}_{n_1}) 
-e^{i ({\bf k - k^\prime})\cdot{\bf R}} 
+$
+\langle cv{\bf k}| \hat{H}_{\text{BSE}} |c^{\prime}v^{\prime}{\bf k^{\prime}}\rangle
+= (\epsilon_{c{\bf k}} - \epsilon_{v{\bf k}}) \delta_{cc^\prime} \delta_{vv^\prime} \delta_{\bf kk^\prime}
+-\frac{1}{N} \sum_{{\bf R},n_{1},n_{3}} {(C^{\bf k}_{n_{1}c}})^* C^{\bf k^\prime}_{n_{1}c^\prime}
+{C^{\bf k}_{n_{3}v}} {(C^{\bf k^\prime}_{n_{3}v^\prime})}^* W({\bf R} + {\bf t}_{n_3} - {\bf t}_{n_1})
+e^{i ({\bf k - k^\prime})\cdot{\bf R}}
 $$
 
 $$
-\hspace{1.5 in} + \frac{1}{N} \sum_{{\bf R},n_{1},n_{3}} {(C^{\bf k}_{n_{1}c})}^* {C^{\bf k}_{n_{1}v}} 
+\hspace{1.5 in} + \frac{1}{N} \sum_{{\bf R},n_{1},n_{3}} {(C^{\bf k}_{n_{1}c})}^* {C^{\bf k}_{n_{1}v}}
 C^{\bf k^\prime}_{n_{3}c^\prime} {(C^{\bf k^\prime}_{n_{3}v^\prime})}^* V({\bf R} + {\bf t}_{n_{3}} - {\bf t}_{n_{1}}).
 $$
+
 
 Please note that the released code is specifically designed for calculating zero-momentum excitons.
 
