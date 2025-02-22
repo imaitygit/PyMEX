@@ -24,7 +24,9 @@ translational invariance of Coulomb interactions:
 
 ![BSE Hamiltonian](./images/BSE_zero.png)
 
-Please note that the released code is specifically designed for calculating zero-momentum excitons.
+Please note that the released code is specifically designed for calculating
+zero-momentum excitons. However, it is straightforward to implement finite
+momentum excitons.
 
 ## 🚀 Features
 
@@ -77,9 +79,7 @@ package or any part of the source code, please cite the following paper for
 which this code was developed:
 
 **Atomistic theory of twist-angle dependent intralayer and interlayer exciton
-properties in twisted bilayer materials**  
-[arXiv](https://arxiv.org/abs/2406.11098)  
-[Publication](https://doi.org/10.1038/s41699-025-00538-4)  
+properties in twisted bilayer materials** [arXiv](https://arxiv.org/abs/2406.11098) [Peer-reviewed@NPJ2DMaterials&Apps.](https://doi.org/10.1038/s41699-025-00538-4)  
 
 ### Citation:
 
