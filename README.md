@@ -73,7 +73,7 @@ If you have any questions or encounter any bugs, please feel free to reach out.
 You can contact us via the following email:
 [indrajit.maity02@gmail.com](mailto:indrajit.maity02@gmail.com)
 
-## ⌨️ Authors and Acknowledgments
+## ⌨️ Authors
 This package is written and maintained by **Indrajit Maity**. If you use this
 package or any part of the source code, please cite the following paper for
 which this code was developed:
@@ -84,11 +84,21 @@ properties in twisted bilayer materials** [arXiv](https://arxiv.org/abs/2406.110
 ### Citation:
 
 ```bibtex
-@article{Maity2024atomistic,
-  title={Atomistic theory of twist-angle dependent intralayer and interlayer exciton properties in twisted bilayer materials},
-  author={Maity, Indrajit and Mostofi, Arash A and Lischner, Johannes},
-  journal={arXiv preprint arXiv:2406.11098},
-  year={2024}
+@Article{Maityatomistic2025,
+author={Maity, Indrajit
+and Mostofi, Arash A.
+and Lischner, Johannes},
+title={Atomistic theory of twist-angle dependent intralayer and interlayer exciton properties in twisted bilayer materials},
+journal={npj 2D Materials and Applications},
+year={2025},
+month={Mar},
+day={04},
+volume={9},
+number={1},
+pages={20},
+issn={2397-7132},
+doi={10.1038/s41699-025-00538-4},
+url={https://doi.org/10.1038/s41699-025-00538-4}
 }
 ```
 
