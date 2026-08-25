@@ -394,9 +394,9 @@ class POTENTIAL(object):
           r = self.get_dist\
           (Rvec[i],atoms[n1_m,3:],atoms[n3_m,3:])
 
-          # f=(pi/2)*(e^2/4\pi\epsilon_0) is the prefactor
+          # f=*(e^2/4\pi\epsilon_0) is the prefactor
           # Set up in a way that the potential is in eV.
-          f = 22.59
+          f = 14.38
           U = 1.0
           # Setting the on-site term
           # Convention: In same spirit as Keldysh !Test!
