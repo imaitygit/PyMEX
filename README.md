@@ -114,7 +114,7 @@ which this code was developed:
 1. **Initial theory and framework:** Atomistic treatment of excitons in twisted bilayer 2D materials, including intralayer and interlayer excitons.  
    *[Atomistic theory of twist-angle dependent intralayer and interlayer exciton properties in twisted bilayer materials](https://arxiv.org/abs/2406.11098)* | [npj 2D Materials and Applications](https://doi.org/10.1038/s41699-025-00538-4)
 
-2. **Transfer-matrix framework:** Extension to multilayer 2D materials using transfer-matrix methods, including moiré-trapped quadrupolar excitons in van der Waals trilayers.  
+2. **Transfer-matrix framework:** Extension to multilayer 2D materials using transfer-matrix methods.  
    *[Moiré trapping of quadrupolar excitons in van der Waals trilayers](https://arxiv.org/abs/2606.16557)*
 
 ### Citation:
