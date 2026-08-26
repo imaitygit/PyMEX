@@ -11,9 +11,9 @@ NOTE: The spin-orbit coupling is not included here. You can skip the Wannierisat
 folder;
  
 *cd 00_Wannier*  
-*PATH-2-WAN90/utility/kmesh.pl 15 15 1 wannier >> kpoints_wannier*
+*PATH-2-WAN90/utility/kmesh.pl 9 9 1 wannier >> kpoints_wannier*
 
-You will find 225 kpoints written in `kpoints_wannier` file. We
+You will find 81 kpoints written in `kpoints_wannier` file. We
 will utilize these k-points in all out future calculations.
 
 
@@ -77,6 +77,8 @@ write_hr = .true
 *mpirun -np numprocess python3 calc_all.py >& pymex_out*
 
 The lines above creates soft links for required files, complies the source codes (for cythonized part), and  runs the BSE Hamiltonian construction. 
+
+On my Mac, using 3 MPI processes, the calculations take about 36 seconds to run. You can then plot the optical conductivities and post-process the exciton wavefunctions, etc.
 
 
 All Done!! 

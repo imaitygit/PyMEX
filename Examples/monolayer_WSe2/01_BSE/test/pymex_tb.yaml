@@ -1,0 +1,86 @@
+# Electronic excitations
+excitation: exciton             # [exciton] 
+restart: auto          # [from_scratch|auto]
+material: 2D                  # ["3D"|"2D"|"1D"|"0D"]
+bse: 
+  method: tb                    # [dft|tb]; Use tb for arbitrary k-point grids.
+  tb:
+    bands:                      
+      engine: wannier90
+      file: WSe2.bands          # Dummy if tb; Internally calculated from Wannier Hamiltonian.
+      vb_idx: [6, 7]            # Valence band indices (Counts from 0; Python style!)
+      vb_skip: 0
+      cb_idx: [7, 8]            # Conduction band indices (Counts from 0; Python style!)
+      cb_skip: 0
+    cnmk:
+      engine: wannier90
+      file: WSe2.cnmk           # Dummy if tb; Internally calculated from Wannier Hamiltonian.
+      vb_idx: [6, 7]
+      vb_skip: 0
+      cb_idx: [7, 8]
+      cb_skip: 0
+    kgrid: [18, 18, 1]         # Coarse grid for example; Use as much as you need for production runs. 
+
+  wannier_io:                  # Wannier90 input/output settings
+    engine: wannier90
+    hr_file: WSe2_hr.dat       
+    wsvec_file: WSe2_wsvec.dat
+    win_file: WSe2.win
+    wout_file: WSe2.wout
+    wf_location: atom_centered   # [atom_centered|wave]
+
+  Qpoints:
+    hspoints: [[0.0, 0.0, 0.0]]  # Q-grid is implemented but not tested yet. Just zero-momentum excitons.
+    num_points: 1
+
+# Screened electron-hole interaction
+eh_interaction:
+  space: real                # [real|reciprocal]
+  real:
+    potential: Keldysh       # [keldysh|unknown]
+    layer: monolayer         # [monolayer|multilayer]
+    type: analytic             # [analytic|numeric]
+    epsilon_t: 1.0           # Dielectric constant of the top layer
+    epsilon_b: 1.0           # Dielectric constant of the bottom layer
+    rho0: [45.09]            # Screening length in Angstroms
+    a0: [3.32]               # Lattice constant in Angstroms (for onsite-screening)
+    zav: [4.4]               # Average atomic position along z
+    thickness: 2.5           # Atoms are searched within z-thickness and z+thickness; 
+  include:
+    direct: true             # Include direct term
+    exchange: true           # Include exchange term
+    screen_exchange: false   # To make exchange term screened, set this to true.
+
+# Absorption spectra
+Absorption:                  #  Largely neglected for unpolarized or spin-orbit coupling (except the energy window). 
+  spin: unpolarized          # [unpolarized]
+  spinorbit:
+    type: perturbation       # [perturbation|full]
+    unfold: false            # [true|false]
+#    m2u_map_file: Moire2unit.hdf5 
+    delta_soc_file: DELTA.hdf5
+    band_file_unpolarized: WS2_unit_unpolar.bands
+    band_file_soc: WS2_unit.bands
+  photon_energy:
+    min: -0.03               # in eV (relative to minimum of the BSE eigenvalues)
+    max: 0.47                # in eV (upto minimum + this much)
+    step: 0.0025             # energy spacing
+    sigma: 0.0075            # Gaussian broadening
+
+# Diagonalization
+diagonalize:
+  library: lapack       # [lapack|elpa]
+                        # For elpa, install elpa and it's python interface. 
+
+# System architecture
+system: cpu               # [cpu|gpu]
+cpu:
+  multithreading: true    # Use multithreading
+
+# IO options
+io:
+  exciton_hamiltonian_file: H_exciton_tb.hdf5       
+  exciton_eigenval_file: Eigval_exciton_tb.hdf5
+  exciton_eigenvec_file: Eigvec_exciton_tb.hdf5
+  exciton_conductivity_file: Conductivity_exciton_tb.hdf5
+  exciton_wfn_rh_file: Exciton_rh_tb.hdf5  
