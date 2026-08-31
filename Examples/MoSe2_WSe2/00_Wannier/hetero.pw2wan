@@ -1,0 +1,7 @@
+&inputpp
+  outdir     =  './'
+  prefix     =  'hetero'
+  seedname   =  'hetero'
+  write_amn  =  .true.
+  write_mmn  =  .true.
+/

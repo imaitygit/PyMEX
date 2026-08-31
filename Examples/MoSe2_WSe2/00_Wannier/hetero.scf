@@ -1,0 +1,44 @@
+&CONTROL
+  calculation  = "scf"
+  prefix       = "hetero"
+  pseudo_dir   = "."
+  outdir       = "."
+  verbosity="high"
+/
+&SYSTEM
+  ibrav     = 0
+  celldm(1) = 6.273890761180335
+  nat       = 6
+  ntyp      = 3
+  ecutwfc   = 100
+  lspinorb  = .true
+  noncolin  = .true
+/
+&ELECTRONS
+  conv_thr    = 1.D-14
+  mixing_beta = 0.3D0
+/
+&IONS
+ ion_dynamics="bfgs"
+/
+
+CELL_PARAMETERS {alat}
+1.0 0.0 0.0
+0.5 0.8660254 0.0
+0.0 0.0 10.542168674698795
+
+ATOMIC_SPECIES
+Mo 95.95 Mo.upf
+W 183.84 W.upf
+Se 78.96 Se.upf
+
+ATOMIC_POSITIONS {Angstrom}
+Mo  1.660000000000000  0.958500000000000  13.562910000000000
+Se  3.320000000000000  1.916902000000000  11.907565000000000
+Se  3.320000000000000  1.916902000000000  15.218495000000001
+W  3.320000000000000  1.916902000000000  20.004306000000000
+Se  1.660000000000000  0.958500000000000  18.359459999999999
+Se  1.660000000000000  0.958500000000000  21.648696000000001
+
+K_POINTS {automatic}
+18 18 1 0 0 0

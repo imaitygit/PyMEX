@@ -1,0 +1,88 @@
+# Electronic excitations
+excitation: exciton             # [exciton] 
+restart: auto         # [from_scratch|" "]
+bse: 
+  method: tb                    # [dft|tb]
+  tb:
+    bands:                      
+      engine: wannier90
+      file: hetero.bands
+      vb_idx: [24, 28]
+      vb_skip: 0
+      cb_idx: [28, 30]
+      cb_skip: 0
+    cnmk:
+      engine: wannier90
+      file: hetero.cnmk
+      vb_idx: [24, 28]
+      vb_skip: 0
+      cb_idx: [28, 30]
+      cb_skip: 0
+    kgrid: [66, 66, 1]
+    electric_field_z: 0.0
+
+  wannier_io:
+    engine: wannier90
+    hr_file: hetero_hr.dat
+    wsvec_file: hetero_wsvec.dat
+    win_file: hetero.win
+    wout_file: hetero.wout
+    wf_location: atom_centered   # [atom_centered|wave]
+
+  Qpoints:
+    hspoints: [[0.0, 0.0, 0.0]]
+    num_points: 1
+
+# Screened electron-hole interaction
+eh_interaction:
+  space: real                # [real|reciprocal]
+  real:
+    potential: Keldysh       # [keldysh|unknown]
+    layer: multilayer         # [monolayer|multilayer]
+    type: numeric           # [analytic|numeric]
+    epsilon_t: 1.0
+    epsilon_b: 1.0
+    rho0: [51.68, 45.09]
+    a0: [3.32, 3.32]
+    zav: [13.562910, 20.004306]
+    thickness: 2.5
+  include:
+    direct: true             # Include direct term
+    exchange: true           # Include exchange term
+    screen_exchange: false
+
+# Absorption spectra
+Absorption:               # 
+  spin: unpolarized          # [unpolarized|polarized|spinorbit]
+  spinorbit:
+    type: perturbation       # [perturbation|full]
+    unfold: false            # [true|false]
+#    m2u_map_file: Moire2unit.hdf5 
+    delta_soc_file: DELTA.hdf5
+    band_file_unpolarized: WS2_unit_unpolar.bands
+    band_file_soc: WS2_unit.bands
+  photon_energy:
+    min: -0.03               # in eV (relative to minimum)
+    max: 0.97                # in eV 
+    step: 0.0025             # energy spacing
+    sigma: 0.005            # Gaussian broadening
+
+# Diagonalization
+diagonalize:
+  library: elpa         # [lapack|elpa]
+  num_eigs: 8000
+
+# System architecture
+system: cpu               # [cpu|gpu]
+cpu:
+  multithreading: true    # Use multithreading
+gpu:
+  streams: 4              # 
+
+# IO options
+io:
+  exciton_hamiltonian_file: H_exciton_tb.hdf5       
+  exciton_eigenval_file: Eigval_exciton_tb.hdf5
+  exciton_eigenvec_file: Eigvec_exciton_tb.hdf5
+  exciton_conductivity_file: Conductivity_exciton_tb.hdf5
+  exciton_wfn_rh_file: Exciton_rh_l1_tb.hdf5  
