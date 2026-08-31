@@ -76,7 +76,7 @@ write_hr = .true
 *export PATH=${PYMEXSRC}/build:$PATH*  
 *mpirun -np numprocess python3 calc_all.py >& pymex_out*
 
-The lines above creates soft links for required files, complies the source codes (for cythonized part), and  runs the BSE Hamiltonian construction. 
+The lines above creates soft links for required files, complies the source codes (for cythonized part), and  runs the BSE Hamiltonian construction, it's diagonalization, and computes optical conductivities. 
 
 On my Mac, using 3 MPI processes, the calculations take about 36 seconds to run. You can then plot the optical conductivities and post-process the exciton wavefunctions, etc.
 
