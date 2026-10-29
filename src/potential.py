@@ -38,6 +38,7 @@ class POTENTIAL(object):
     if self.kgrid is None:
       self.kgrid = self.wan2bse.get_kgrid()
     self.A_s = unit2super(self.kgrid, self.A)
+    
 
 
   def distribute_full(self, num_p, rank, size):
@@ -179,9 +180,9 @@ class POTENTIAL(object):
     n3s = g3.ravel()
 
     # shift vectors: shape (n_shifts, 3)
-    shifts = (n1s[:, None] * self.A_s[:, 0] +
-      n2s[:, None] * self.A_s[:, 1] +
-      n3s[:, None] * self.A_s[:, 2])
+    shifts = (n1s[:, None] * self.A_s[0] +
+      n2s[:, None] * self.A_s[1] +
+      n3s[:, None] * self.A_s[2])
 
     pos = wanfuncs_pos[:, :3]
 
@@ -237,7 +238,7 @@ class POTENTIAL(object):
       shifts = [[0], [0], [0]]
     else:
       print_f(f"ERROR: material_type must be '0D', '1D', '2D', or '3D', "
-              f"got '{material_type}'")
+              f"got '{self.material_type}'")
       comm.Abort(1)
 
     best_delta = delta[:3].copy()
@@ -248,9 +249,9 @@ class POTENTIAL(object):
       for n2 in shifts[1]:
         for n3 in shifts[2]:
           trial = (delta[:3]
-                  + n1 * self.A_s[:, 0]
-                  + n2 * self.A_s[:, 1]
-                  + n3 * self.A_s[:, 2])
+                  + n1 * self.A_s[0]
+                  + n2 * self.A_s[1]
+                  + n3 * self.A_s[2])
           dist2 = np.dot(trial, trial)
           shift = (n1, n2, n3)
 
@@ -330,8 +331,8 @@ class POTENTIAL(object):
     C, epsilon_b, epsilon_t = sp.symbols('C epsilon_b epsilon_t', real=True)
     params_dict = {}
 
-    params_dict[epsilon_b] = epsilon_t_val
-    params_dict[epsilon_t] = epsilon_b_val
+    params_dict[epsilon_t] = epsilon_t_val
+    params_dict[epsilon_b] = epsilon_b_val
     n_layers = len(chi_list)
     for i in range(n_layers):
       chi_sym = sp.symbols(f'chi_{i+1}')
@@ -495,7 +496,7 @@ class POTENTIAL(object):
     rng        = list(range(-1, 2))
     shifts     = np.array([(s1, s2, 0) for s1 in rng for s2 in rng],
                             dtype=np.float64)
-    shift_vecs = np.ascontiguousarray(shifts @ self.A_s.T, dtype=np.float64)
+    shift_vecs = np.ascontiguousarray(shifts @ self.A_s, dtype=np.float64)
 
     # contiguous arrays for Cython
     Rvec_c = np.ascontiguousarray(Rvec[:, :3],      dtype=np.float64)

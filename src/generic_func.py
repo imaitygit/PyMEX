@@ -4,6 +4,7 @@ from functools import partial
 import sympy as sp
 print_f = partial(print, flush=True)
 
+
 def unit2super(m,A):
   """
   Returns the supercell lattice vectors of a 
@@ -14,7 +15,7 @@ def unit2super(m,A):
   """
   S = np.zeros((3,3))
   np.fill_diagonal(S,m)
-  return np.matmul(A,S)
+  return np.matmul(S,A)
 
 
 def ang2crys(A, pos):
