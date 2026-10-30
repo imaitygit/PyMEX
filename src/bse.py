@@ -36,7 +36,7 @@ class BSE(object):
   Construct the BSE matrix, diagonalize, and post-process.
   Note on HDF5 I/O (04/07/2025): 
   In the previous PyMEX package, we used driver='mpio' and collective write. 
-  But in many instances, the performance is the terrible. As a 
+  But in many instances, the performance is terrible. As a 
   result, switching to collecting to root node and writing a single 
   file. 
   """
@@ -86,7 +86,7 @@ class BSE(object):
     #---------------------------------------------------------------------
     # Electron-Hole interaction/potential
     # if dft: self.kvec is set through _setup_dft()
-    # if tb: self.kvec is set though _setup_tb()
+    # if tb: self.kvec is set through _setup_tb()
     self.A = self.wan2bse.get_lattice()
     self.map_wannier_functions()
 
@@ -286,7 +286,7 @@ class BSE(object):
     if nQ=1,num_orb=8000, nk=9, the memory required is:
       1 * 8000 * 8000 * 9 * 16 bytes ~ 9 GB.
     Overall, we need 2*C_nm_k and 2*E_vk memory for this i.e., in the above example,
-    we would need approximately 18 GB. The memorey required to store eigenvalues are small.
+    we would need approximately 18 GB. The memory required to store eigenvalues are small.
     """
     if getattr(self, '_tb_setup_done', False):
       return
@@ -1474,7 +1474,7 @@ class BSE(object):
       if absorption_spin == "unpolarized" or\
         absorption_spin == "polarized":
         if rank == root:
-          print_f(f"Reading {Conductivity_file} to extract the ansorption spectra.")
+          print_f(f"Reading {Conductivity_file} to extract the absorption spectra.")
           with h5py.File(Conductivity_file, "r") as f:
             dset = f["optical_conductivity"][:]  
             x_component = dset[:, 0]
@@ -1496,9 +1496,9 @@ class BSE(object):
                         if method == "tb"
                         else f"sigma_{absorption_spin}.txt")
           np.savetxt(filename, data_to_save, header=header)
-          print_f(f"{filename} written for plotting absoprtion spectra.")
+          print_f(f"{filename} written for plotting absorption spectra.")
       else:
-        print_f("Not implemeted error! SOC")
+        print_f("Not implemented error! SOC")
         comm.Abort(1)
 
     else:
@@ -2036,7 +2036,7 @@ class BSE(object):
     """
     self.get_precomputed_potential()
 
-    Ham_file = self.config.get("io", {}).get("exciton_hamiltonian_file", {})
+    Ham_file = self.config.get("io", {}).get("exciton_hamiltonian_file", None)
     if Ham_file is None:
       Ham_file = "H_" + self.config.get("excitation", {}) + ".hdf5"
 
@@ -2482,7 +2482,7 @@ class BSE(object):
     (Eigensolver Library for Parallel Applications), and 
     SLEPc (not publicly released yet). 
     """
-    # Synchornize and time-track for diagonalization
+    # Synchronize and time-track for diagonalization
     comm.Barrier()
     t_diag = time.time()
 
@@ -3021,8 +3021,8 @@ class BSE(object):
               density = np.sum(np.abs(self.C_nc_kplusQ[0,j_start:j_end, i_cb, k])**2)
               loc_r[k, i] = [*pos_wf[i], density]
 
-        f.create_dataset(f"cb_{i_cb}", data=loc_r)
-        print_f(f"Stored conduction band {i_cb} in HDF5")
+          f.create_dataset(f"cb_{i_cb}", data=loc_r)
+          print_f(f"Stored conduction band {i_cb} in HDF5")
     return None
 
 
@@ -3203,79 +3203,6 @@ class BSE(object):
       if np.linalg.norm(pos - rh) < 0.5:
         return map_wf[i, :]
     return None  
-
-
-  def get_electron_for_exciton(self, S):
-    """
-    Computes the electron wave-function for a given exciton index S.
-    Elaborate computation of exciton wavefunctions.
-    """
-    wf_loc = self.config.get("bse", {}).get("wannier_io", {}
-                                            ).get("wf_location")
-    using_mlwf = self.config.get("bse", {}).get("wannier_io", {}
-                                             ).get("using_mlwf", False)
-    # Defaults
-    if not isinstance(wf_loc, str) or wf_loc.strip() == "":
-      wf_loc = "atom_centered"
-    if rank ==  root:
-      print_f(f"Computing electron density for exciton index S = {S}")
-      print_f(f"(Summing over all hole contributions)")
-    method = self.config.get("bse", {}).get("method", {})
-    io_files = self.set_exciton_io_files()
-
-    # This is going to be used for n1 and n3
-    map_wf = self.wan2bse.map_WF(using_mlwf=using_mlwf,
-                                 mode=wf_loc)
-    pos_wf = map_wf[:,3:6].astype(float)
-    ind_wf = map_wf[:,0:3].astype(int)
-
-    # Load data at root and distribute
-    Gamma_idx = self.select_Gamma()
-    eigvals = self.load_and_distribute_eigensol(io_files["eigenval_file"], Gamma_idx)
-    eigvecs = self.load_and_distribute_eigensol(io_files["eigenvec_file"], Gamma_idx)
-
-    num_orb = ind_wf.shape[0]
-    nlist = self.distribute_full(num_orb, rank, size)
-    local_size = nlist[1] - nlist[0]
-    local_electron_wfn = np.zeros((local_size, self.Rvec.shape[0]), 
-                                  dtype=np.complex128)
-    if method == "tb":
-      A_Scvk = eigvecs[:,S].reshape((self.C_nc_kplusQ.shape[2],
-                        self.C_nv_k.shape[1],
-                        self.C_nc_kplusQ.shape[3]))
-      counter = 0 
-      for i_local, i_global in enumerate(range(nlist[0], nlist[1])):
-        local_exciton_wfn[i_local, :] = opt_electron_for_exciton(A_Scvk,
-                              self.Rvec, self.kvec, 
-                              self.C_nc_kplusQ[Gamma_idx,:,:,:],
-                              self.C_nv_k, ind_wf, pos_wf, i_global)
-        if rank == root:
-          counter += 1
-          print_f(f"Root computed {counter} out of {local_size}")
-
-      # Prepare data to send to root
-      local_indices = np.arange(nlist[0], nlist[1], dtype=np.int32)
-      send_data = (local_indices, local_exciton_wfn)
-      all_data = comm.gather(send_data, root=root)
-
-      # Root writes to HDF5
-      electron_for_exciton = f"Electron_for_S_{S}.hdf5"
-      if rank == root:
-        try:
-          print_f(f"Writing {electron_for_exciton}.")
-          with h5py.File(electron_for_exciton, "w") as f:
-            dset = f.create_dataset("electron_density",
-                                      shape=(ind_wf.shape[0], self.Rvec.shape[0]),
-                                      dtype=np.complex128)
-            for indices, values in all_data:
-              dset[indices, :] = values
-        except Exception as e:
-          print_f(f"Error writing HDF5 file '{electron_for_exciton}': {e}")
-          comm.Abort(1)
-
-    elif method == "dft":
-      print_f("Exiting...")
-      comm.Abort(1)
 
 
   def estimate_memory_from_config(self):

@@ -209,7 +209,7 @@ def check_bse(bse):
         print_f("ERROR: 'bands' must be specified for dft bse method.")
         comm.Abort(1)
       else:
-        valid_dft_engine = {'vasp', 'quantum_espresso', 'siesta'}
+        valid_dft_engine = {'quantum_espresso', 'siesta'}
         if bse["dft"]["bands"]["engine"] not in valid_dft_engine: 
           print_f(f'ERROR: Invalid engine {bse["dft"]["bands"]["engine"]}. Must be one of: {valid_dft_engine}')
           comm.Abort(1)
@@ -282,7 +282,7 @@ def check_absorption(absorption):
     # Validate spinorbit absorption
     valid_soc_type = {'perturbation', 'full'}
     if absorption["spinorbit"]["type"] not in valid_soc_type:
-      #print_f(f"ERROR: Invalid spinorbit type '{absorption["spinorbit"]["type"]}'. Must be one of: {', '.join(valid_soc_type)}")
+      print_f(f"ERROR: Invalid spinorbit type '{absorption["spinorbit"]["type"]}'. Must be one of: {', '.join(valid_soc_type)}")
       comm.Abort(1)
     elif absorption["spinorbit"]["type"] == 'perturbation':
       if absorption["spinorbit"]["unfold"]:
@@ -302,7 +302,7 @@ def check_system(system):
   """
   valid_system = {'cpu', 'gpu'}
   if system not in valid_system:
-    #print_f(f"ERROR: Invalid system type '{system}'. Must be one of: {', '.join(valid_system)}")
+    print_f(f"ERROR: Invalid system type '{system}'. Must be one of: {', '.join(valid_system)}")
     comm.Abort(1)
   elif system == 'gpu':
     print_f("WARNING: GPU support is experimental and may not work as expected.")
@@ -312,7 +312,7 @@ def check_diagonalization(diagonalize):
   """
   Check if the diagonalization parameters are valid.
   """
-  valid_library = {'primme', 'lapack', 'elpa', 'slepc'}
+  valid_library = {'lapack', 'elpa'}
   if diagonalize["library"] not in valid_library:
-    #print_f(f"ERROR: Invalid diagonalization library '{diagonalize["library"]}'. Must be one of: {', '.join(valid_library)}")
+    print_f(f"ERROR: Invalid diagonalization library '{diagonalize["library"]}'. Must be one of: {', '.join(valid_library)}")
     comm.Abort(1)

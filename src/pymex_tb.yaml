@@ -1,7 +1,7 @@
 # Electronic excitations
 excitation: exciton             # [exciton] 
 restart: from_scratch         # [from_scratch|" "]
-material: 3D                  # ["3D"|"2D"|"1D"|"0D"]
+material: 2D                  # ["3D"|"2D"|"1D"|"0D"]
 bse: 
   method: tb                    # [dft|tb]
   tb:
@@ -39,7 +39,7 @@ eh_interaction:
   space: real                # [real|reciprocal]
   real:
     potential: Keldysh       # [keldysh|unknown]
-    layer: monolayer         # [monolayer|bilayer|trilayer]
+    layer: monolayer         # [monolayer]
     type: analytic             # [analytic]
     epsilon_t: 1.0           # top_dielectric
     epsilon_b: 1.0           # bottom dielectric
