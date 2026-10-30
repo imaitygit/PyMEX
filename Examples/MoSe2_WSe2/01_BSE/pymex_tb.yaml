@@ -1,6 +1,7 @@
 # Electronic excitations
 excitation: exciton             # [exciton] 
 restart: auto         # [from_scratch|" "]
+material: 2D                  
 bse: 
   method: tb                    # [dft|tb]
   tb:
