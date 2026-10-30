@@ -545,8 +545,6 @@ class POTENTIAL(object):
           for local_i, global_i in enumerate(indices):
             Vr_full[:, global_i, :] = chunk[:, local_i, :]
 
-      Vr_full = self.symmetrise_potential(Vr_full, Rvec)
-
       # Write to HDF5
       with h5py.File(screened_file, "w") as f:
         f.create_dataset("W", data=Vr_full)
@@ -707,8 +705,6 @@ class POTENTIAL(object):
           for local_i, global_i in enumerate(indices):
             Vr_full[:, global_i, :] = chunk[:, local_i, :]
 
-      Vr_full = self.symmetrise_potential(Vr_full, Rvec)
-
       # Write to HDF5
       with h5py.File(screened_file, "w") as f:
         f.create_dataset("W", data=Vr_full)
@@ -784,38 +780,7 @@ class POTENTIAL(object):
           for local_i, global_i in enumerate(indices):
             Vr_full[:, global_i, :] = chunk[:, local_i, :]
 
-      Vr_full = self.symmetrise_potential(Vr_full, Rvec)
-
       with h5py.File(bare_file, "w") as f:
         f.create_dataset("V", data=Vr_full)
       print_f(f"Unscreened Coulomb potential written to {bare_file}")
     return None
-
-
-  def symmetrise_potential(self, Vr_full, Rvec):
-    """
-    Enforce V[R,i,j] = V[-R,j,i] for all R-vectors.
-    For Nyquist points where -R is not in the grid,
-    enforce V[R,i,j] = V[R,j,i] (self-symmetry).
-    Must be called on root only, after Vr_full is assembled.
-    """
-    Rvec_tuples   = [tuple(np.round(r, 8)) for r in Rvec]
-    Rvec_index    = {r: i for i, r in enumerate(Rvec_tuples)}
-    nyquist_count = 0
-
-    for i_R in range(len(Rvec)):
-      mR_key = tuple(np.round(-Rvec[i_R], 8))
-      if mR_key in Rvec_index:
-        j_R = Rvec_index[mR_key]
-        if i_R < j_R:
-          avg          = 0.5 * (Vr_full[i_R] + Vr_full[j_R].T)
-          Vr_full[i_R] = avg
-          Vr_full[j_R] = avg.T
-      else:
-        Vr_full[i_R] = 0.5 * (Vr_full[i_R] + Vr_full[i_R].T)
-        nyquist_count += 1
-
-    if nyquist_count > 0:
-      print_f(f"  Symmetrised {nyquist_count} Nyquist R-points")
-
-    return Vr_full
